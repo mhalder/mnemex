@@ -15,7 +15,6 @@ use mnemex::brief;
 use mnemex::check::{self, Env};
 use mnemex::cli::{Cli, Command, CompletionShell, ExtensionTarget};
 use mnemex::error::Error;
-use mnemex::id;
 use mnemex::kind::Kind;
 use mnemex::query::{self, ProjectAnswer};
 use mnemex::report::{self, Summary};
@@ -48,6 +47,14 @@ fn main() -> ExitCode {
         Ok(code) => ExitCode::from(code),
         Err(e) => {
             let _ = writeln!(std::io::stderr(), "error: {e}");
+            // A verb handed a slug rather than an id names the id it meant, the
+            // same courtesy `list --project` extends.
+            if let Error::NoSuchNote(id) = &e
+                && let Ok(root) = vault::root()
+                && let Some(hint) = query::slug_hint(&root, None, id)
+            {
+                let _ = writeln!(std::io::stderr(), "{hint}");
+            }
             ExitCode::from(REFUSED)
         }
     }
@@ -317,6 +324,9 @@ fn hook_command() -> u8 {
 /// A query that finds nothing exits 1: the question was asked and answered.
 fn nothing_found(root: &Path, id: &str) -> u8 {
     let _ = writeln!(std::io::stderr(), "`{id}` is no note in {}", root.display());
+    if let Some(hint) = query::slug_hint(root, None, id) {
+        let _ = writeln!(std::io::stderr(), "{hint}");
+    }
     FOUND_PROBLEMS
 }
 
@@ -383,30 +393,13 @@ fn list_command(
         };
         let _ = writeln!(std::io::stderr(), "no notes{filter} in {}", root.display());
         if let Some(project) = project
-            && let Some(full) = project_slug_hint(root, project)
+            && let Some(hint) = query::slug_hint(root, Some(Kind::Project), project)
         {
-            let _ = writeln!(
-                std::io::stderr(),
-                "`{project}` is a slug, not an id; use `{full}`"
-            );
+            let _ = writeln!(std::io::stderr(), "{hint}");
         }
         return Ok(FOUND_PROBLEMS);
     }
     Ok(OK)
-}
-
-/// The id of the project whose slug is `value`, when `value` is a slug rather
-/// than an id. `--project` takes an id, and the slug is the half a human
-/// remembers.
-fn project_slug_hint(root: &Path, value: &str) -> Option<String> {
-    if id::is_valid(value) {
-        return None;
-    }
-    query::list(root, Some(Kind::Project), None)
-        .ok()?
-        .into_iter()
-        .find(|n| id::slug(&n.id) == Some(value))
-        .map(|n| n.id)
 }
 
 fn parse_kind(name: &str) -> Result<Kind, Error> {

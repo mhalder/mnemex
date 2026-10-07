@@ -307,9 +307,9 @@ fn next_lines(plans: &[Spoke]) -> Vec<String> {
     }
     if stale > 0 {
         out.push(if stale == 1 {
-            "1 plan is done and still listed as open steps count 0: set it done".to_owned()
+            "1 plan has no open steps: set it done".to_owned()
         } else {
-            format!("{stale} plans are done and still listed as open steps count 0: set them done")
+            format!("{stale} plans have no open steps: set them done")
         });
     }
     out

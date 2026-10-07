@@ -378,7 +378,7 @@ fn mx406_reports_one_id_in_more_than_one_folder() {
         ds.contains(&(
             Code::Mx406,
             Severity::Error,
-            "`202609070816-x` names more than one note (in `plans`, `adrs`); ids must be unique across the vault, so `mnemex rename 202609070816-x <new title>` one of them".to_owned()
+            "`202609070816-x` names more than one note (in `plans`, `adrs`); ids must be unique across the vault, so rename one of them with `mnemex rename 202609070816-x <new title>`".to_owned()
         )),
         "{ds:?}"
     );

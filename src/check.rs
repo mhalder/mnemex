@@ -524,7 +524,7 @@ fn duplicate_ids(files: &[GovernedFile]) -> BTreeMap<String, String> {
         out.insert(
             stem.to_owned(),
             format!(
-                "`{stem}` names more than one note (in `{folders}`); ids must be unique across the vault, so `mnemex rename {stem} <new title>` one of them"
+                "`{stem}` names more than one note (in `{folders}`); ids must be unique across the vault, so rename one of them with `mnemex rename {stem} <new title>`"
             ),
         );
     }

@@ -529,6 +529,31 @@ fn delete_removes_a_spoke_outright() {
 }
 
 #[test]
+fn delete_reports_a_body_that_still_links_the_removed_note() {
+    let v = Vault::new();
+    project(&v, "202609061846-p");
+    v.note(
+        "plans",
+        "202609070816-x",
+        "project: \"[[202609061846-p]]\"\nstatus: open\n",
+    );
+    // A body elsewhere links the note about to be removed.
+    v.write(
+        "memories",
+        "202609081100-m",
+        "---\nproject: \"[[202609061846-p]]\"\n---\n\n# M\n\nsee [[202609070816-x]]\n",
+    );
+    let out = authoring::delete(ctx(&v, None), "202609070816-x").expect("delete");
+    assert!(
+        out.notes
+            .iter()
+            .any(|n| n.contains("still mentions `202609070816-x`")),
+        "{:?}",
+        out.notes
+    );
+}
+
+#[test]
 fn delete_refuses_a_project_with_spokes() {
     let v = Vault::new();
     project(&v, "202609061846-p");

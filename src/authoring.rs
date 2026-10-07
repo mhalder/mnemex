@@ -733,7 +733,7 @@ pub fn rename(ctx: Ctx<'_>, note: &str, title: &str) -> Result<Outcome> {
     notes.extend(inbound.skipped);
     // A rename that keeps the id leaves every `[[id]]` in a body still right.
     if new_id != note {
-        notes.extend(body_mentions(ctx.root, note)?);
+        notes.extend(body_mentions(ctx.root, note, "bodies are not rewritten")?);
     }
 
     outcome(ctx, format!("renamed {note} to {new_id}"), new_path, notes)
@@ -827,9 +827,10 @@ fn plan_inbound(index: &Index, old: &str, new: &str) -> Inbound {
     inbound
 }
 
-/// Notes whose *body* still mentions an id. Advisory only, with no exit-code
-/// effect: body links are out of scope.
-fn body_mentions(root: &Path, id: &str) -> Result<Vec<String>> {
+/// Notes whose *body* still mentions an id, each with `reason` for why it
+/// matters. Advisory only, with no exit-code effect: body links are out of
+/// scope.
+fn body_mentions(root: &Path, id: &str, reason: &str) -> Result<Vec<String>> {
     let needle = format!("[[{id}]]");
     let mut out = vec![];
     for file in crate::vault::governed_files(root)? {
@@ -839,7 +840,7 @@ fn body_mentions(root: &Path, id: &str) -> Result<Vec<String>> {
         let body = frontmatter::parse(&src).map(|d| d.body).unwrap_or(src);
         if body.contains(&needle) {
             out.push(format!(
-                "the body of {} still mentions `{id}`; bodies are not rewritten",
+                "the body of {} still mentions `{id}`; {reason}",
                 file.path.display()
             ));
         }
@@ -852,7 +853,8 @@ fn body_mentions(root: &Path, id: &str) -> Result<Vec<String>> {
 /// # Errors
 /// Refuses a project that any spoke still names in `project`, listing each such
 /// id and the verb that moves it. A spoke deletes outright: nothing else names
-/// it.
+/// it. A body elsewhere that still links the id is reported after the removal,
+/// advisory only — bodies are not rewritten.
 pub fn delete(ctx: Ctx<'_>, note: &str) -> Result<Outcome> {
     let index = ctx.index()?;
     let subject = note_of(&index, note)?;
@@ -866,10 +868,12 @@ pub fn delete(ctx: Ctx<'_>, note: &str) -> Result<Outcome> {
         }
     }
     std::fs::remove_file(&subject.path).map_err(|e| Error::io(&subject.path, e))?;
+    // Computed after the removal, so the note's own body is not counted.
+    let notes = body_mentions(ctx.root, note, "that note no longer exists")?;
     Ok(Outcome {
         headline: format!("deleted {note}"),
         path: subject.path.clone(),
-        notes: vec![],
+        notes,
         diagnostics: vec![],
     })
 }
