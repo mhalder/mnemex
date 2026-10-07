@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0](https://github.com/mhalder/mnemex/compare/v0.1.2...v0.2.0) - 2026-10-07
+
+### Added
+
+- slug hints on every id-taking verb, body-link reports on delete, and message repairs ([#5](https://github.com/mhalder/mnemex/pull/5))
+
 ## [0.1.2](https://github.com/mhalder/mnemex/compare/v0.1.1...v0.1.2) - 2026-10-07
 
 ### Fixed
