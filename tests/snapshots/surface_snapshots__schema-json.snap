@@ -1,0 +1,153 @@
+---
+source: tests/surface_snapshots.rs
+expression: "String::from_utf8_lossy(&out.stdout)"
+---
+{
+  "version": 1,
+  "kinds": [
+    {
+      "kind": "project",
+      "folder": "projects",
+      "purpose": "A directory and repository of work; the entrypoint a session resolves to.",
+      "scaffold": "## Purpose\n\n## Boundaries\n\n## Notes\n",
+      "fields": [
+        {
+          "name": "status",
+          "required": true,
+          "shape": "enum",
+          "values": [
+            "active",
+            "paused",
+            "completed",
+            "archived"
+          ]
+        },
+        {
+          "name": "tags",
+          "required": false,
+          "shape": "text list"
+        },
+        {
+          "name": "path",
+          "required": false,
+          "shape": "text"
+        },
+        {
+          "name": "repo",
+          "required": false,
+          "shape": "git remote"
+        }
+      ]
+    },
+    {
+      "kind": "memory",
+      "folder": "memories",
+      "purpose": "Durable knowledge for one project that the repository, its git log, and its tracker cannot supply.",
+      "scaffold": "## Summary\n\n## Details\n",
+      "fields": [
+        {
+          "name": "project",
+          "required": true,
+          "shape": "wiki-link",
+          "target": "project"
+        },
+        {
+          "name": "tags",
+          "required": false,
+          "shape": "text list"
+        },
+        {
+          "name": "refs",
+          "required": false,
+          "shape": "url list"
+        }
+      ]
+    },
+    {
+      "kind": "plan",
+      "folder": "plans",
+      "purpose": "A body of steps for one project; `open` until set `done`.",
+      "scaffold": "## Goal\n\n## Steps\n\n- [ ] \n",
+      "fields": [
+        {
+          "name": "project",
+          "required": true,
+          "shape": "wiki-link",
+          "target": "project"
+        },
+        {
+          "name": "status",
+          "required": true,
+          "shape": "enum",
+          "values": [
+            "open",
+            "done"
+          ]
+        },
+        {
+          "name": "tags",
+          "required": false,
+          "shape": "text list"
+        },
+        {
+          "name": "refs",
+          "required": false,
+          "shape": "url list"
+        }
+      ]
+    },
+    {
+      "kind": "adr",
+      "folder": "adrs",
+      "purpose": "A decision that constrains future work on one project.",
+      "scaffold": "## Context\n\n## Decision\n\n## Considered options\n\n## Consequences\n",
+      "fields": [
+        {
+          "name": "project",
+          "required": true,
+          "shape": "wiki-link",
+          "target": "project"
+        },
+        {
+          "name": "status",
+          "required": true,
+          "shape": "enum",
+          "values": [
+            "proposed",
+            "accepted",
+            "deprecated"
+          ]
+        },
+        {
+          "name": "tags",
+          "required": false,
+          "shape": "text list"
+        },
+        {
+          "name": "refs",
+          "required": false,
+          "shape": "url list"
+        }
+      ]
+    },
+    {
+      "kind": "context",
+      "folder": "contexts",
+      "purpose": "The vocabulary and relationships of one project's bounded area.",
+      "scaffold": "## Summary\n\n## Language\n\n## Relationships\n\n## Example dialogue\n\n## Flagged ambiguities\n",
+      "fields": [
+        {
+          "name": "project",
+          "required": true,
+          "shape": "wiki-link",
+          "target": "project"
+        },
+        {
+          "name": "tags",
+          "required": false,
+          "shape": "text list"
+        }
+      ]
+    }
+  ]
+}

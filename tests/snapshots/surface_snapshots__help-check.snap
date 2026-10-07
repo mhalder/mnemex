@@ -1,0 +1,12 @@
+---
+source: tests/surface_snapshots.rs
+expression: "help(&[verb])"
+---
+Check a note or a whole vault
+
+Usage: mnemex check [OPTIONS]
+
+Options:
+      --path <FILE>  The note's file to check, not an id
+      --json         Emit the versioned envelope
+  -h, --help         Print help

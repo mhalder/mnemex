@@ -1,0 +1,43 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      cargo:
+        patterns:
+          - '*'
+    # Pinned exact on purpose, each with its own check:
+    # - clap_complete's `unstable-dynamic` feature may change between minor
+    #   releases, so its completion output is verified by tests/complete.rs.
+    # - saphyr and saphyr-parser are pre-1.0 and sit under the frontmatter
+    #   engine's spans; frontmatter_roundtrip.rs is their check.
+    ignore:
+      - dependency-name: clap_complete
+      - dependency-name: saphyr
+      - dependency-name: saphyr-parser
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      npm:
+        patterns:
+          - '*'
+    # @types/node deliberately tracks the Node 24 major the hooks run on,
+    # not the newest major; a bump past 24 is a deliberate change, with its
+    # tests.

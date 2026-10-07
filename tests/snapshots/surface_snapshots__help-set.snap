@@ -1,0 +1,16 @@
+---
+source: tests/surface_snapshots.rs
+expression: "help(&[verb])"
+---
+Set a field
+
+Usage: mnemex set [OPTIONS] <NOTE> <FIELD> [VALUES]...
+
+Arguments:
+  <NOTE>       The note's id
+  <FIELD>      The field
+  [VALUES]...  The value, or values for a list. A relative `path` is taken from the working directory
+
+Options:
+      --clear  Remove the field instead
+  -h, --help   Print help

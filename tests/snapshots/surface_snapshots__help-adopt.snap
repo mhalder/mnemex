@@ -1,0 +1,18 @@
+---
+source: tests/surface_snapshots.rs
+expression: "help(&[verb])"
+---
+Bring an existing markdown file into the vault
+
+Usage: mnemex adopt [OPTIONS] --kind <KIND> <FILE>
+
+Arguments:
+  <FILE>  The markdown file to adopt. A stray file in a vault folder is moved, any other copied
+
+Options:
+      --kind <KIND>        The kind, which is the folder it lands in
+      --project <PROJECT>  The project this note belongs to
+      --status <STATUS>    The status, for plan and adr
+      --tag <TAG>          A tag. Repeat for more
+      --ref <URL>          A work-item URL. Repeat for more
+  -h, --help               Print help

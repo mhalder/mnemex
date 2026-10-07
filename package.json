@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "description": "Type-checks and tests the Pi extension in extensions/pi.ts and the Claude Code hook in hooks/claude.ts. The crate needs none of this.",
+  "type": "module",
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "1.0.4",
+    "@types/node": "24.19.1",
+    "typescript": "7.0.2"
+  }
+}

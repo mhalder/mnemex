@@ -1,0 +1,60 @@
+name: Bug report
+description: Report a bug in mnemex
+body:
+  - type: input
+    id: version
+    attributes:
+      label: mnemex version
+      description: Output of `mnemex --version`.
+      placeholder: "mnemex 0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS and version
+      description: e.g. Ubuntu 24.04, macOS 14.
+      placeholder: "Ubuntu 24.04"
+    validations:
+      required: true
+  - type: input
+    id: rust-version
+    attributes:
+      label: Rust version (if built from source)
+      description: Output of `rustc --version`.
+      placeholder: "rustc 1.88.0"
+    validations:
+      required: false
+  - type: textarea
+    id: vault
+    attributes:
+      label: Vault layout
+      description: |
+        How the vault is laid out, if it is relevant: the value of
+        `MEMEX_VAULT`, which folders exist, whether notes are written through
+        the tool or through an editor or symlink.
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: command
+    attributes:
+      label: Command line
+      description: The exact command line you ran.
+      placeholder: "mnemex new plan \"Ship it\" --project 202609061846-p"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: What actually happened, including the exit code.
+    validations:
+      required: true

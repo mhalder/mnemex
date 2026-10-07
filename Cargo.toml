@@ -1,0 +1,45 @@
+[package]
+name = "mnemex"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+description = "Authors and validates notes in a governed markdown vault"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/mhalder/mnemex"
+homepage = "https://github.com/mhalder/mnemex"
+readme = "README.md"
+keywords = ["notes", "markdown", "vault", "cli", "knowledge"]
+categories = ["command-line-utilities", "text-processing"]
+
+[lib]
+name = "mnemex"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mnemex"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+# `unstable-dynamic` may change between minor releases, so it is pinned exactly.
+clap_complete = { version = "=4.6.11", features = ["unstable-dynamic"] }
+jiff = "0.2"
+saphyr = "=0.1.0"
+saphyr-parser = "=0.1.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+thiserror = "2"
+
+[dev-dependencies]
+assert_cmd = "2"
+insta = "1"
+predicates = "3"
+proptest = "1"
+tempfile = "3"
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[lints.clippy]
+pedantic = { level = "deny", priority = -1 }

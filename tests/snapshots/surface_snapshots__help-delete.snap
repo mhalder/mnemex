@@ -1,0 +1,13 @@
+---
+source: tests/surface_snapshots.rs
+expression: "help(&[verb])"
+---
+Remove a note
+
+Usage: mnemex delete <NOTE>
+
+Arguments:
+  <NOTE>  The note's id
+
+Options:
+  -h, --help  Print help

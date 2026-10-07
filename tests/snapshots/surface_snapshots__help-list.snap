@@ -1,0 +1,13 @@
+---
+source: tests/surface_snapshots.rs
+expression: "help(&[verb])"
+---
+List every note, including one whose frontmatter does not parse
+
+Usage: mnemex list [OPTIONS]
+
+Options:
+      --kind <KIND>        Restrict to one kind
+      --project <PROJECT>  Keep only the notes whose `project` names this id
+      --json               Emit the versioned envelope
+  -h, --help               Print help

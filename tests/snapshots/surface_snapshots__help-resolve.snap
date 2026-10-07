@@ -1,0 +1,14 @@
+---
+source: tests/surface_snapshots.rs
+expression: "help(&[verb])"
+---
+Find a note by id
+
+Usage: mnemex resolve [OPTIONS] <ID>
+
+Arguments:
+  <ID>  The id
+
+Options:
+      --json  Emit the versioned envelope
+  -h, --help  Print help

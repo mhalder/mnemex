@@ -1,0 +1,15 @@
+---
+source: tests/surface_snapshots.rs
+expression: "help(&[verb])"
+---
+Retitle a note, and every spoke `project` that names a renamed project
+
+Usage: mnemex rename [OPTIONS] <NOTE> <TITLE>
+
+Arguments:
+  <NOTE>   The note's id
+  <TITLE>  The new title
+
+Options:
+      --dry-run  Report what would change without writing it
+  -h, --help     Print help

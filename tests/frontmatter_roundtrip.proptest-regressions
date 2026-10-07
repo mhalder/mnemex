@@ -1,0 +1,9 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 62432d6a507db33a435524cb55f61cc4879b7b15f7ff1a0e60d4c004937727af # shrinks to (d0, kind) = (Document { fields: [Field { key: "_", key_at: Position { line: 1, column: 1 }, value: List(["?"]), value_at: Position { line: 1, column: 1 }, items_at: [] }], duplicates: [], body: "" }, Project)
+cc db07835a8af7c753e8bcd5ab734df6bb6754af9c9030cdef8e12fbccbe8c5254 # shrinks to (d0, kind) = (Document { fields: [Field { key: "_", key_at: Position { line: 1, column: 1 }, value: List(["]"]), value_at: Position { line: 1, column: 1 }, items_at: [] }], duplicates: [], body: "" }, Project)
+cc 10495859efedb3a551bbfa87523184cf9b78bd02ea902d4b6a2d86830973c655 # shrinks to (d0, kind) = (Document { fields: [Field { key: "_", key_at: Position { line: 1, column: 1 }, value: Scalar("-"), value_at: Position { line: 1, column: 1 }, items_at: [] }], duplicates: [], body: "" }, Project)

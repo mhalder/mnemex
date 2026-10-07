@@ -1,0 +1,30 @@
+---
+source: tests/surface_snapshots.rs
+expression: "help(&[])"
+---
+Authors and validates notes in a governed markdown vault
+
+Usage: mnemex <COMMAND>
+
+Commands:
+  new         Mint a note
+  set         Set a field
+  rename      Retitle a note, and every spoke `project` that names a renamed project
+  delete      Remove a note
+  adopt       Bring an existing markdown file into the vault
+  check       Check a note or a whole vault
+  schema      Print the schema. This is the schema
+  hook        Read a tool-event payload on stdin and report on the write
+  list        List every note, including one whose frontmatter does not parse
+  resolve     Find a note by id
+  project     Find the project that owns a directory
+  show        What a note belongs to: its project and its project's spokes
+  brief       The one command a session runs at start
+  skill       Print the embedded agent skill, or install or check the installed one
+  extension   Print an embedded hook, or install or check the installed one
+  completion  Print the shell-completion activation snippet
+  help        Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version

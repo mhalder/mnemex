@@ -1,0 +1,10 @@
+---
+source: tests/surface_snapshots.rs
+expression: "check_output(&v, false)"
+---
+<vault>/projects/202609061846-p.md:3:7: warning[MX403]: `path` names `<vault>/not-here`, which is not a directory here
+<vault>/plans/notanid.md: error[MX401]: filename `notanid` is not a valid note id (twelve digits, a hyphen, then a lowercase slug); `mnemex adopt <vault>/plans/notanid.md --kind plan` moves it to a valid one
+<vault>/adrs/202609061400-a.md:3:9: error[MX102]: `status` must be one of `proposed`, `accepted`, `deprecated`, found `maybe`
+<vault>/adrs/202609061400-a.md:4:8: warning[MX105]: `owner` is not a field of an adr; it is preserved but unchecked
+
+2 errors, 2 warnings in 4 notes

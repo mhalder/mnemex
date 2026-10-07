@@ -1,0 +1,13 @@
+---
+source: tests/surface_snapshots.rs
+expression: "help(&[verb])"
+---
+The one command a session runs at start
+
+Usage: mnemex brief [OPTIONS]
+
+Options:
+      --for <DIR>       The directory to ask about. Defaults to the working directory
+      --budget <BYTES>  The output budget, in bytes. Defaults to 16384
+      --json            Emit the versioned envelope
+  -h, --help            Print help

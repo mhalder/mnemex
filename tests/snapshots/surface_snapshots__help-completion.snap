@@ -1,0 +1,22 @@
+---
+source: tests/surface_snapshots.rs
+expression: "help(&[verb])"
+---
+Print the shell-completion activation snippet
+
+Usage: mnemex completion <SHELL>
+
+Arguments:
+  <SHELL>
+          The shell whose activation snippet to print
+
+          Possible values:
+          - bash:       Bash
+          - zsh:        Zsh
+          - fish:       Fish
+          - elvish:     Elvish
+          - powershell: PowerShell
+
+Options:
+  -h, --help
+          Print help (see a summary with '-h')

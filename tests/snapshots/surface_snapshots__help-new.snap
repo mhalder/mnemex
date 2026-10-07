@@ -1,0 +1,20 @@
+---
+source: tests/surface_snapshots.rs
+expression: "help(&[verb])"
+---
+Mint a note
+
+Usage: mnemex new [OPTIONS] <KIND> <TITLE>
+
+Arguments:
+  <KIND>   The kind, which is the folder it lands in
+  <TITLE>  The title. Its slug becomes half the id
+
+Options:
+      --project <PROJECT>  The project this note belongs to
+      --status <STATUS>    The status, for plan and adr
+      --tag <TAG>          A tag. Repeat for more
+      --ref <URL>          A work-item URL. Repeat for more
+      --path <DIR>         The directory a project's work happens in. A relative path is taken from the working directory
+      --repo <REMOTE>      The repository a project is. Any spelling of a remote; stored canonically. Derived from `--path` when that is a checkout
+  -h, --help               Print help

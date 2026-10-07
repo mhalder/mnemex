@@ -1,0 +1,12 @@
+---
+source: tests/surface_snapshots.rs
+expression: "help(&[verb])"
+---
+Find the project that owns a directory
+
+Usage: mnemex project [OPTIONS]
+
+Options:
+      --for <DIR>  The directory to ask about. Defaults to the working directory
+      --json       Emit the versioned envelope
+  -h, --help       Print help

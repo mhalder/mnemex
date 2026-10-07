@@ -1,0 +1,11 @@
+---
+source: tests/surface_snapshots.rs
+expression: "help(&[verb])"
+---
+Print the schema. This is the schema
+
+Usage: mnemex schema [OPTIONS]
+
+Options:
+      --json  Emit the versioned envelope
+  -h, --help  Print help

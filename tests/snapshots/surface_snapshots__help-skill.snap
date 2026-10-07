@@ -1,0 +1,12 @@
+---
+source: tests/surface_snapshots.rs
+expression: "help(&[verb])"
+---
+Print the embedded agent skill, or install or check the installed one
+
+Usage: mnemex skill [OPTIONS]
+
+Options:
+      --install [<DIR>]  Write the skill to DIR/SKILL.md. Defaults to ~/.agents/skills/mnemex
+      --check [<DIR>]    Exit 1 when DIR/SKILL.md is missing or differs from the embedded skill
+  -h, --help             Print help

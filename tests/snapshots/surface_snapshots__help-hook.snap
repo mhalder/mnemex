@@ -1,0 +1,10 @@
+---
+source: tests/surface_snapshots.rs
+expression: "help(&[verb])"
+---
+Read a tool-event payload on stdin and report on the write
+
+Usage: mnemex hook
+
+Options:
+  -h, --help  Print help

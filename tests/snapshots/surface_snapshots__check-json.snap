@@ -1,0 +1,52 @@
+---
+source: tests/surface_snapshots.rs
+expression: "check_output(&v, true)"
+---
+{
+  "version": 1,
+  "checked": 4,
+  "diagnostics": [
+    {
+      "path": "<vault>/projects/202609061846-p.md",
+      "code": "MX403",
+      "severity": "warning",
+      "message": "`path` names `<vault>/not-here`, which is not a directory here",
+      "span": {
+        "line": 3,
+        "column": 7
+      }
+    },
+    {
+      "path": "<vault>/plans/notanid.md",
+      "code": "MX401",
+      "severity": "error",
+      "message": "filename `notanid` is not a valid note id (twelve digits, a hyphen, then a lowercase slug); `mnemex adopt <vault>/plans/notanid.md --kind plan` moves it to a valid one",
+      "span": null
+    },
+    {
+      "path": "<vault>/adrs/202609061400-a.md",
+      "code": "MX102",
+      "severity": "error",
+      "message": "`status` must be one of `proposed`, `accepted`, `deprecated`, found `maybe`",
+      "span": {
+        "line": 3,
+        "column": 9
+      }
+    },
+    {
+      "path": "<vault>/adrs/202609061400-a.md",
+      "code": "MX105",
+      "severity": "warning",
+      "message": "`owner` is not a field of an adr; it is preserved but unchecked",
+      "span": {
+        "line": 4,
+        "column": 8
+      }
+    }
+  ],
+  "summary": {
+    "error": 2,
+    "warning": 2,
+    "info": 0
+  }
+}

@@ -1,0 +1,72 @@
+---
+source: tests/surface_snapshots.rs
+expression: "String::from_utf8_lossy(&out.stdout)"
+---
+A note's kind is its folder, and is never a frontmatter field.
+Fields are listed in canonical order; `mnemex` emits them this way.
+
+project (projects/)
+  purpose: A directory and repository of work; the entrypoint a session resolves to.
+  status        required  enum: active | paused | completed | archived
+  tags          optional  text list
+  path          optional  text
+  repo          optional  git remote
+  body:
+    ## Purpose
+
+    ## Boundaries
+
+    ## Notes
+
+memory (memories/)
+  purpose: Durable knowledge for one project that the repository, its git log, and its tracker cannot supply.
+  project       required  wiki-link to project
+  tags          optional  text list
+  refs          optional  url list
+  body:
+    ## Summary
+
+    ## Details
+
+plan (plans/)
+  purpose: A body of steps for one project; `open` until set `done`.
+  project       required  wiki-link to project
+  status        required  enum: open | done
+  tags          optional  text list
+  refs          optional  url list
+  body:
+    ## Goal
+
+    ## Steps
+
+    - [ ] 
+
+adr (adrs/)
+  purpose: A decision that constrains future work on one project.
+  project       required  wiki-link to project
+  status        required  enum: proposed | accepted | deprecated
+  tags          optional  text list
+  refs          optional  url list
+  body:
+    ## Context
+
+    ## Decision
+
+    ## Considered options
+
+    ## Consequences
+
+context (contexts/)
+  purpose: The vocabulary and relationships of one project's bounded area.
+  project       required  wiki-link to project
+  tags          optional  text list
+  body:
+    ## Summary
+
+    ## Language
+
+    ## Relationships
+
+    ## Example dialogue
+
+    ## Flagged ambiguities

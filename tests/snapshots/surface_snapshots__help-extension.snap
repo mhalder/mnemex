@@ -1,0 +1,25 @@
+---
+source: tests/surface_snapshots.rs
+expression: "help(&[verb])"
+---
+Print an embedded hook, or install or check the installed one
+
+Usage: mnemex extension [OPTIONS] <TARGET>
+
+Arguments:
+  <TARGET>
+          Which agent's hook: Pi's extension or Claude Code's hook
+
+          Possible values:
+          - pi:     The Pi extension
+          - claude: The Claude Code command hook
+
+Options:
+      --install [<DIR>]
+          Write the hook to DIR/mnemex.ts. Defaults to the agent's extensions or hooks directory
+
+      --check [<DIR>]
+          Exit 1 when DIR/mnemex.ts is missing or differs from the embedded hook
+
+  -h, --help
+          Print help (see a summary with '-h')

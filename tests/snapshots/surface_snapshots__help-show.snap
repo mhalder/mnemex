@@ -1,0 +1,14 @@
+---
+source: tests/surface_snapshots.rs
+expression: "help(&[verb])"
+---
+What a note belongs to: its project and its project's spokes
+
+Usage: mnemex show [OPTIONS] <ID>
+
+Arguments:
+  <ID>  The id
+
+Options:
+      --json  Emit the versioned envelope
+  -h, --help  Print help
