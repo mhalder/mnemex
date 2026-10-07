@@ -31,7 +31,7 @@ body:
       label: Vault layout
       description: |
         How the vault is laid out, if it is relevant: the value of
-        `MEMEX_VAULT`, which folders exist, whether notes are written through
+        `MNEMEX_VAULT`, which folders exist, whether notes are written through
         the tool or through an editor or symlink.
       render: text
     validations:

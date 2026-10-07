@@ -28,10 +28,10 @@ type HookEvent = {
 
 type Output = Record<string, unknown> & { systemMessage?: string };
 
-// An empty MEMEX_VAULT counts as unset, as mnemex reads it.
+// An empty MNEMEX_VAULT counts as unset, as mnemex reads it.
 function vaultRoot(): string {
-  const named = process.env.MEMEX_VAULT;
-  return resolve(named ? named : join(homedir(), "memex"));
+  const named = process.env.MNEMEX_VAULT;
+  return resolve(named ? named : join(homedir(), "mnemex"));
 }
 
 function isWithin(root: string, absolute: string): boolean {

@@ -40,7 +40,7 @@ function run(event: Record<string, unknown>): Record<string, unknown> | undefine
   const result = spawnSync(process.execPath, [HOOK], {
     input: JSON.stringify(event),
     encoding: "utf8",
-    env: { ...process.env, MNEMEX: stub, MEMEX_VAULT: vault, XDG_RUNTIME_DIR: runtime },
+    env: { ...process.env, MNEMEX: stub, MNEMEX_VAULT: vault, XDG_RUNTIME_DIR: runtime },
   });
   assert.equal(result.status, 0, result.stderr);
   return result.stdout.trim() ? JSON.parse(result.stdout) : undefined;
@@ -175,10 +175,10 @@ test("a sweep that finds only warnings reports them instead of staying silent", 
 });
 
 test("a Stop sweep that mnemex refuses is reported, not silence", () => {
-  writeFileSync(refusal, "error: `$MEMEX_VAULT` names /x, which holds none of the governed folders\n");
+  writeFileSync(refusal, "error: `$MNEMEX_VAULT` names /x, which holds none of the governed folders\n");
   try {
     assert.deepEqual(stop(), {
-      systemMessage: "error: `$MEMEX_VAULT` names /x, which holds none of the governed folders",
+      systemMessage: "error: `$MNEMEX_VAULT` names /x, which holds none of the governed folders",
     });
   } finally {
     rmSync(refusal, { force: true });

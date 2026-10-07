@@ -15,7 +15,7 @@ fn help(args: &[&str]) -> String {
         .expect("binary")
         .args(args)
         .arg("--help")
-        .env_remove("MEMEX_VAULT")
+        .env_remove("MNEMEX_VAULT")
         .output()
         .expect("run");
     String::from_utf8_lossy(&out.stdout).into_owned()
@@ -98,7 +98,7 @@ fn check_output(v: &Vault, json: bool) -> String {
     if json {
         c.arg("--json");
     }
-    let out = c.env("MEMEX_VAULT", v.root()).output().expect("run");
+    let out = c.env("MNEMEX_VAULT", v.root()).output().expect("run");
     String::from_utf8_lossy(&out.stdout).replace(&v.root().display().to_string(), "<vault>")
 }
 

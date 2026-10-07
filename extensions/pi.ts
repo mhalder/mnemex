@@ -15,10 +15,10 @@ type HookResponse = {
   hookSpecificOutput?: { additionalContext?: string };
 };
 
-// An empty MEMEX_VAULT counts as unset, as mnemex reads it.
+// An empty MNEMEX_VAULT counts as unset, as mnemex reads it.
 function vaultRoot(): string {
-  const named = process.env.MEMEX_VAULT;
-  return resolve(named ? named : join(homedir(), "memex"));
+  const named = process.env.MNEMEX_VAULT;
+  return resolve(named ? named : join(homedir(), "mnemex"));
 }
 
 function inputPath(input: unknown): string | undefined {

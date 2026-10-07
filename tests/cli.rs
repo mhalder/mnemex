@@ -10,7 +10,7 @@ use support::Vault;
 
 fn mnemex(v: &Vault) -> Command {
     let mut c = Command::cargo_bin("mnemex").expect("binary");
-    c.current_dir(v.root()).env("MEMEX_VAULT", v.root());
+    c.current_dir(v.root()).env("MNEMEX_VAULT", v.root());
     c
 }
 
@@ -82,7 +82,7 @@ fn no_vault_at_the_resolved_path_exits_two() {
     let v = Vault::bare();
     let missing = v.root().join("no-such-dir");
     let mut c = Command::cargo_bin("mnemex").expect("binary");
-    c.args(["check"]).env("MEMEX_VAULT", &missing);
+    c.args(["check"]).env("MNEMEX_VAULT", &missing);
     let (code, _, err) = run(&mut c);
     assert_eq!(code, 2);
     assert!(err.contains("no vault at"), "{err}");
@@ -679,7 +679,7 @@ fn a_hook_with_no_vault_is_silent() {
     let payload = serde_json::json!({ "tool_input": { "file_path": "/x/y.md" } }).to_string();
     let mut c = Command::cargo_bin("mnemex").expect("binary");
     c.args(["hook"])
-        .env_remove("MEMEX_VAULT")
+        .env_remove("MNEMEX_VAULT")
         .env_remove("HOME");
     let mut child = c
         .stdin(std::process::Stdio::piped())
@@ -702,7 +702,7 @@ fn a_hook_with_no_vault_and_debug_on_reports_the_reason() {
     let payload = serde_json::json!({ "tool_input": { "file_path": "/x/y.md" } }).to_string();
     let mut c = Command::cargo_bin("mnemex").expect("binary");
     c.args(["hook"])
-        .env_remove("MEMEX_VAULT")
+        .env_remove("MNEMEX_VAULT")
         .env_remove("HOME")
         .env("MNEMEX_HOOK_DEBUG", "1");
     let mut child = c

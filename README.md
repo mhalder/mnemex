@@ -15,7 +15,7 @@ Two invariants define it:
 2. **Validation on the write.** A violation reaches the writer as a coded,
    spanned diagnostic within milliseconds of the write that caused it.
 
-There is one vault: the directory `$MEMEX_VAULT` names, or `~/memex` when it is
+There is one vault: the directory `$MNEMEX_VAULT` names, or `~/mnemex` when it is
 unset. `memex` names the vault and `mnemex` names the tool that governs it.
 
 ## Install
@@ -104,7 +104,7 @@ Naming the directory fills the repository in, and says so:
 ```
 $ mnemex new project "mnemex" --path ~/src/mnemex
 created 202609100010-mnemex
-/home/x/memex/projects/202609100010-mnemex.md
+/home/x/mnemex/projects/202609100010-mnemex.md
 `repo` is `github.com/mhalder/mnemex`, from the checkout at `/home/x/src/mnemex`
 ```
 

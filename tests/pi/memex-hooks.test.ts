@@ -34,9 +34,9 @@ const vault = join(scratch, "vault");
 mkdirSync(join(vault, "notes"), { recursive: true });
 const inside = join(vault, "notes", "202609081100-n.md");
 
-// The extension reads MNEMEX when it loads and MEMEX_VAULT on every event.
+// The extension reads MNEMEX when it loads and MNEMEX_VAULT on every event.
 process.env.MNEMEX = stub;
-process.env.MEMEX_VAULT = vault;
+process.env.MNEMEX_VAULT = vault;
 const { default: mnemexHooks } = await import("../../extensions/pi.ts");
 
 type Handler = (event: unknown, ctx: unknown) => Promise<unknown>;
@@ -130,17 +130,17 @@ test("a `~/` path is expanded from the home directory, as Pi's tools read it", a
   assert.deepEqual(hookedPaths(), [inside]);
 });
 
-test("an empty MEMEX_VAULT counts as unset, as mnemex reads it", async () => {
-  const saved = { vault: process.env.MEMEX_VAULT, home: process.env.HOME };
+test("an empty MNEMEX_VAULT counts as unset, as mnemex reads it", async () => {
+  const saved = { vault: process.env.MNEMEX_VAULT, home: process.env.HOME };
   const home = join(scratch, "home");
-  const note = join(home, "memex", "notes", "202609081100-n.md");
-  mkdirSync(join(home, "memex", "notes"), { recursive: true });
-  process.env.MEMEX_VAULT = "";
+  const note = join(home, "mnemex", "notes", "202609081100-n.md");
+  mkdirSync(join(home, "mnemex", "notes"), { recursive: true });
+  process.env.MNEMEX_VAULT = "";
   process.env.HOME = home;
   try {
     await load().toolResult("write", { path: note });
   } finally {
-    process.env.MEMEX_VAULT = saved.vault;
+    process.env.MNEMEX_VAULT = saved.vault;
     process.env.HOME = saved.home;
   }
   assert.deepEqual(hookedPaths(), [note]);
@@ -314,13 +314,13 @@ test("a sweep that finds errors reports them as errors", async () => {
 test("a settle sweep that mnemex refuses is reported as an error, not silence", async () => {
   const h = load();
   await h.toolResult("write", { path: inside });
-  writeFileSync(refusal, "error: `$MEMEX_VAULT` names /x, which holds none of the governed folders\n");
+  writeFileSync(refusal, "error: `$MNEMEX_VAULT` names /x, which holds none of the governed folders\n");
   try {
     await h.settled();
   } finally {
     rmSync(refusal, { force: true });
   }
   assert.deepEqual(h.notes, [
-    ["error", "error: `$MEMEX_VAULT` names /x, which holds none of the governed folders\n"],
+    ["error", "error: `$MNEMEX_VAULT` names /x, which holds none of the governed folders\n"],
   ]);
 });

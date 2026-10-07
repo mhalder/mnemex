@@ -8,11 +8,11 @@ use std::path::PathBuf;
 /// Anything the library refuses or cannot do.
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    /// Neither `$MEMEX_VAULT` nor `$HOME` names a vault.
-    #[error("no vault: set `MEMEX_VAULT`, or a `$HOME` directory to hold `~/memex`")]
+    /// Neither `$MNEMEX_VAULT` nor `$HOME` names a vault.
+    #[error("no vault: set `MNEMEX_VAULT`, or a `$HOME` directory to hold `~/mnemex`")]
     NoVault,
     /// The one vault does not exist, and the verb reads rather than creates.
-    #[error("no vault at `{}`; set `MEMEX_VAULT` or create `~/memex`", .path.display())]
+    #[error("no vault at `{}`; set `MNEMEX_VAULT` or create `~/mnemex`", .path.display())]
     NoVaultAt {
         /// The directory that should be a vault.
         path: PathBuf,

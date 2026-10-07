@@ -166,7 +166,7 @@ fn the_binary_answers_each_shell() {
     seed(&v);
     let ask = |shell: &str, line: &[&str]| {
         let mut cmd = Command::cargo_bin("mnemex").expect("binary");
-        cmd.env("MEMEX_VAULT", v.root()).env("COMPLETE", shell);
+        cmd.env("MNEMEX_VAULT", v.root()).env("COMPLETE", shell);
         if shell != "fish" {
             // The last word is the one under the cursor.
             cmd.env("_CLAP_COMPLETE_INDEX", (line.len() - 1).to_string());
@@ -266,7 +266,7 @@ fn every_completion_snippet_is_valid_shell_syntax() {
     ] {
         let out = Command::cargo_bin("mnemex")
             .expect("binary")
-            .env_remove("MEMEX_VAULT")
+            .env_remove("MNEMEX_VAULT")
             .args(["completion", shell])
             .output()
             .expect("run");

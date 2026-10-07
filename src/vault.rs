@@ -1,6 +1,6 @@
 //! The one vault root, and the governed walk.
 //!
-//! One vault: `$MEMEX_VAULT` if set and non-empty, else `$HOME/memex`. Nothing
+//! One vault: `$MNEMEX_VAULT` if set and non-empty, else `$HOME/mnemex`. Nothing
 //! validates that the directory "looks like a vault" — a verb that reads fails
 //! when the directory does not exist, and `new`/`adopt` create it.
 
@@ -20,13 +20,13 @@ pub struct GovernedFile {
     pub stem: String,
 }
 
-/// The one vault root: `$MEMEX_VAULT` if set and non-empty, else `$HOME/memex`.
+/// The one vault root: `$MNEMEX_VAULT` if set and non-empty, else `$HOME/mnemex`.
 ///
 /// # Errors
-/// [`Error::NoVault`] when neither `$MEMEX_VAULT` nor `$HOME` names a vault.
+/// [`Error::NoVault`] when neither `$MNEMEX_VAULT` nor `$HOME` names a vault.
 pub fn root() -> Result<PathBuf> {
     root_from(
-        std::env::var_os("MEMEX_VAULT").as_deref(),
+        std::env::var_os("MNEMEX_VAULT").as_deref(),
         std::env::var_os("HOME").as_deref(),
     )
 }
@@ -39,7 +39,7 @@ pub fn root_from(env: Option<&std::ffi::OsStr>, home: Option<&std::ffi::OsStr>) 
         return Ok(PathBuf::from(env));
     }
     match home.filter(|p| !p.is_empty()) {
-        Some(home) => Ok(PathBuf::from(home).join("memex")),
+        Some(home) => Ok(PathBuf::from(home).join("mnemex")),
         None => Err(Error::NoVault),
     }
 }

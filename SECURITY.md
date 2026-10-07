@@ -22,7 +22,7 @@ security-relevant surface is:
 - The single-writer contract: authoring verbs take no lock, so two authoring
   verbs must not run against one vault at once. Nothing enforces this but the
   caller.
-- Path handling under `MEMEX_VAULT`: a written file is judged against the one
+- Path handling under `MNEMEX_VAULT`: a written file is judged against the one
   vault, and a note that is a symlink is written through to its target.
 - The hook envelope: `mnemex hook` reads a tool-event payload on stdin and must
   never fail the write it reports on, so a malformed payload is handled, not
