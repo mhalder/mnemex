@@ -138,7 +138,7 @@ fn the_next_block_lists_open_plans_and_stale_ones() {
     assert!(
         b.next
             .iter()
-            .any(|n| n.contains("1 plan is done and still listed as open steps count 0")),
+            .any(|n| n.contains("1 plan has no open steps: set it done")),
         "{:?}",
         b.next
     );
@@ -343,7 +343,7 @@ fn the_next_block_pluralises_many_stale_plans_and_prints_refs() {
     assert!(
         b.next
             .iter()
-            .any(|n| n.contains("2 plans are done and still listed as open steps count 0")),
+            .any(|n| n.contains("2 plans have no open steps: set them done")),
         "{:?}",
         b.next
     );
