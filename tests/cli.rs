@@ -648,6 +648,23 @@ fn a_list_that_matches_nothing_names_the_filter() {
 }
 
 #[test]
+fn a_slug_that_matches_more_than_one_note_names_every_id() {
+    let v = Vault::new();
+    // The same title at two stamps: two ids, one slug.
+    project(&v, "202609061846-demo");
+    project(&v, "202609070900-demo");
+
+    let (code, _, err) = run(mnemex(&v).args(["list", "--project", "demo"]));
+    assert_eq!(code, 1);
+    assert!(
+        err.contains(
+            "`demo` is a slug, not an id; it matches `202609061846-demo`, `202609070900-demo`"
+        ),
+        "{err}"
+    );
+}
+
+#[test]
 fn the_hook_debug_branch_reports_reasons() {
     let v = Vault::new();
     let p = v.write("daily", "x", "not a note\n");

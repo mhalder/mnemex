@@ -133,6 +133,44 @@ pub fn list(root: &Path, kind: Option<Kind>, project: Option<&str>) -> Result<Ve
         .collect())
 }
 
+/// The full ids of every note whose slug half is `value`, restricted to `kind`
+/// when given, in index order.
+///
+/// A slug is not an id and is not unique: two notes with the same title minted
+/// at different stamps share one. Every match is returned, so a caller can say
+/// there is more than one rather than pick one silently.
+#[must_use]
+pub fn slug_matches(root: &Path, kind: Option<Kind>, value: &str) -> Vec<String> {
+    if id::is_valid(value) {
+        return vec![];
+    }
+    list(root, kind, None)
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|n| id::slug(&n.id) == Some(value))
+        .map(|n| n.id)
+        .collect()
+}
+
+/// The hint for a value a verb was handed as an id: `value` is a slug, and these
+/// are the full ids it matches. `None` when `value` is already an id, or names
+/// nothing.
+#[must_use]
+pub fn slug_hint(root: &Path, kind: Option<Kind>, value: &str) -> Option<String> {
+    let matches = slug_matches(root, kind, value);
+    match matches.as_slice() {
+        [] => None,
+        [one] => Some(format!("`{value}` is a slug, not an id; use `{one}`")),
+        many => Some(format!(
+            "`{value}` is a slug, not an id; it matches {}",
+            many.iter()
+                .map(|id| format!("`{id}`"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        )),
+    }
+}
+
 /// The ways `project` can answer.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProjectAnswer {

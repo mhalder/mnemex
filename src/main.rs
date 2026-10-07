@@ -15,7 +15,6 @@ use mnemex::brief;
 use mnemex::check::{self, Env};
 use mnemex::cli::{Cli, Command, CompletionShell, ExtensionTarget};
 use mnemex::error::Error;
-use mnemex::id;
 use mnemex::kind::Kind;
 use mnemex::query::{self, ProjectAnswer};
 use mnemex::report::{self, Summary};
@@ -383,30 +382,13 @@ fn list_command(
         };
         let _ = writeln!(std::io::stderr(), "no notes{filter} in {}", root.display());
         if let Some(project) = project
-            && let Some(full) = project_slug_hint(root, project)
+            && let Some(hint) = query::slug_hint(root, Some(Kind::Project), project)
         {
-            let _ = writeln!(
-                std::io::stderr(),
-                "`{project}` is a slug, not an id; use `{full}`"
-            );
+            let _ = writeln!(std::io::stderr(), "{hint}");
         }
         return Ok(FOUND_PROBLEMS);
     }
     Ok(OK)
-}
-
-/// The id of the project whose slug is `value`, when `value` is a slug rather
-/// than an id. `--project` takes an id, and the slug is the half a human
-/// remembers.
-fn project_slug_hint(root: &Path, value: &str) -> Option<String> {
-    if id::is_valid(value) {
-        return None;
-    }
-    query::list(root, Some(Kind::Project), None)
-        .ok()?
-        .into_iter()
-        .find(|n| id::slug(&n.id) == Some(value))
-        .map(|n| n.id)
 }
 
 fn parse_kind(name: &str) -> Result<Kind, Error> {
