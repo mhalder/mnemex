@@ -97,7 +97,7 @@ pub fn respond_with_debug(payload: &str, env: Env<'_>) -> (Option<String>, Vec<S
         Err(_) => (
             None,
             vec![
-                "no vault is configured: set MNEMEX_VAULT, or keep the vault at ~/mnemex"
+                "no vault is configured: set MNEMEX_VAULT, or keep the vault at ~/mnemex-vault"
                     .to_owned(),
             ],
         ),
