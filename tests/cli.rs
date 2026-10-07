@@ -292,7 +292,7 @@ fn schema_human_and_json_are_the_same_table() {
 #[test]
 fn a_relative_path_flag_is_taken_from_the_working_directory() {
     let v = Vault::new();
-    let work = std::fs::canonicalize(v.dir("somewhere")).expect("canonical");
+    let work = v.dir("somewhere");
     let mut c = mnemex(&v);
     c.current_dir(v.root());
     let (code, out, _) = run(c.args(["new", "project", "P", "--path", "somewhere"]));

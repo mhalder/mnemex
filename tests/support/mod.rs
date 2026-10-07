@@ -8,16 +8,21 @@ use tempfile::TempDir;
 
 /// A vault in a temp directory, removed when it drops.
 pub struct Vault {
-    dir: TempDir,
+    // Held for its Drop: removes the temp directory when the test ends.
+    _dir: TempDir,
+    root: PathBuf,
 }
 
 impl Vault {
     /// An empty directory that is not yet a vault.
     #[must_use]
     pub fn bare() -> Self {
-        Self {
-            dir: tempfile::tempdir().expect("tempdir"),
-        }
+        let dir = tempfile::tempdir().expect("tempdir");
+        // The tool canonicalises the paths it stores and reports. `tempfile`
+        // returns the symlinked spelling on macOS (`/var` for `/private/var`),
+        // so the root the tests assert against is canonical too.
+        let root = std::fs::canonicalize(dir.path()).expect("canonical root");
+        Self { _dir: dir, root }
     }
 
     /// A vault with all eight governed folders.
@@ -33,7 +38,7 @@ impl Vault {
     /// The vault root.
     #[must_use]
     pub fn root(&self) -> &Path {
-        self.dir.path()
+        &self.root
     }
 
     /// Write `<folder>/<id>.md` with `contents`, returning its path.
