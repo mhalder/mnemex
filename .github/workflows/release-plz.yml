@@ -54,7 +54,9 @@ jobs:
       - name: Tag the release and publish
         run: release-plz release
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          # The CLI reads GIT_TOKEN; the release-plz action maps GITHUB_TOKEN to
+          # it, but this workflow runs the CLI directly.
+          GIT_TOKEN: ${{ github.token }}
       - name: Start the binary matrix when the release has no assets yet
         # A tag pushed with the default GITHUB_TOKEN starts no workflow, so
         # workflow_dispatch is the only trigger for the matrix. Gate it on the
@@ -109,4 +111,5 @@ jobs:
       - name: Update the release PR
         run: release-plz release-pr
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          # The CLI reads GIT_TOKEN, not GITHUB_TOKEN.
+          GIT_TOKEN: ${{ github.token }}
