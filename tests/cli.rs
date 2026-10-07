@@ -665,6 +665,43 @@ fn a_slug_that_matches_more_than_one_note_names_every_id() {
 }
 
 #[test]
+fn a_query_handed_a_slug_names_the_id_to_use() {
+    let v = Vault::new();
+    project(&v, "202609061846-p");
+
+    for verb in ["resolve", "show"] {
+        let (code, _, err) = run(mnemex(&v).args([verb, "p"]));
+        assert_eq!(code, 1, "{verb}");
+        assert!(err.contains("`p` is no note in"), "{verb}: {err}");
+        assert!(
+            err.contains("`p` is a slug, not an id; use `202609061846-p`"),
+            "{verb}: {err}"
+        );
+    }
+}
+
+#[test]
+fn an_authoring_verb_handed_a_slug_names_the_id_to_use() {
+    let v = Vault::new();
+    project(&v, "202609061846-p");
+
+    let (code, _, err) = run(mnemex(&v).args(["delete", "p"]));
+    assert_eq!(code, 2);
+    assert!(err.contains("`p` is no note in this vault"), "{err}");
+    assert!(
+        err.contains("`p` is a slug, not an id; use `202609061846-p`"),
+        "{err}"
+    );
+
+    let (code, _, err) = run(mnemex(&v).args(["set", "p", "status", "active"]));
+    assert_eq!(code, 2);
+    assert!(
+        err.contains("`p` is a slug, not an id; use `202609061846-p`"),
+        "{err}"
+    );
+}
+
+#[test]
 fn the_hook_debug_branch_reports_reasons() {
     let v = Vault::new();
     let p = v.write("daily", "x", "not a note\n");

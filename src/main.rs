@@ -47,6 +47,14 @@ fn main() -> ExitCode {
         Ok(code) => ExitCode::from(code),
         Err(e) => {
             let _ = writeln!(std::io::stderr(), "error: {e}");
+            // A verb handed a slug rather than an id names the id it meant, the
+            // same courtesy `list --project` extends.
+            if let Error::NoSuchNote(id) = &e
+                && let Ok(root) = vault::root()
+                && let Some(hint) = query::slug_hint(&root, None, id)
+            {
+                let _ = writeln!(std::io::stderr(), "{hint}");
+            }
             ExitCode::from(REFUSED)
         }
     }
@@ -316,6 +324,9 @@ fn hook_command() -> u8 {
 /// A query that finds nothing exits 1: the question was asked and answered.
 fn nothing_found(root: &Path, id: &str) -> u8 {
     let _ = writeln!(std::io::stderr(), "`{id}` is no note in {}", root.display());
+    if let Some(hint) = query::slug_hint(root, None, id) {
+        let _ = writeln!(std::io::stderr(), "{hint}");
+    }
     FOUND_PROBLEMS
 }
 
