@@ -111,8 +111,8 @@ fn the_skill_routes_to_the_tool_for_everything_the_tool_answers() {
 #[test]
 fn the_skill_tells_the_agent_to_check_its_own_copy() {
     assert!(
-        skill().contains("`mnemex skill --check`"),
-        "the skill must route the agent to `mnemex skill --check`"
+        skill().contains("mnemex skill --check <this skill directory>"),
+        "the skill must route the agent to `mnemex skill --check <this skill directory>`"
     );
 }
 

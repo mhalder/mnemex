@@ -47,10 +47,10 @@ A replaced ADR is set `deprecated`; the replacing ADR links it in its Context.
 
 ## Updating
 
-This skill ships inside the binary. Run `mnemex skill --check` against your own
-skill directory: it exits 1 when the installed skill is missing or differs from
-the one embedded in the binary, in which case `mnemex skill --install <dir>`
-refreshes it.
+This skill ships inside the binary. Pass this skill's directory to
+`mnemex skill --check <this skill directory>`: it exits 1 when the installed
+copy is missing or differs from the embedded one. Passing the same directory to
+`mnemex skill --install <this skill directory>` refreshes it.
 
 ## Exit codes
 
