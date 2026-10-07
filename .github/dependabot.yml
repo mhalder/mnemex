@@ -41,3 +41,7 @@ updates:
     # @types/node deliberately tracks the Node 24 major the hooks run on,
     # not the newest major; a bump past 24 is a deliberate change, with its
     # tests.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types:
+          - version-update:semver-major
