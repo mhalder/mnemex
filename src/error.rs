@@ -54,7 +54,7 @@ pub enum Error {
     },
     /// A value that is not a work-item URL.
     #[error(
-        "`{0}` is not a work-item URL: a ref is an `http://` or `https://` URL with a path and no credentials, as in `https://github.com/owner/name/pull/42`"
+        "`{0}` is not a work-item URL: a ref is an `http://` or `https://` URL with a path and no credentials, or a bare `host/path` taken as `https://host/path`, as in `https://github.com/owner/name/pull/42`"
     )]
     NotAUrl(String),
     /// A kind name that names no kind.

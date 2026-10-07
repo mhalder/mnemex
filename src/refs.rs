@@ -1,29 +1,39 @@
 //! Work-item URLs: the `refs` shape.
 //!
 //! A ref is a normalised `http://` or `https://` URL with a path and no
-//! credentials. Normalising every spelling of one URL to one value is what lets
-//! two notes compare equal, exactly as [`crate::git::canonical`] does for
-//! remotes. [`canonical`] is the fixed point: canonicalising a stored value is
-//! the value again.
+//! credentials; a spelling with no scheme is read as `https://`. Normalising
+//! every spelling of one URL to one value is what lets two notes compare equal,
+//! exactly as [`crate::git::canonical`] does for remotes. [`canonical`] is the
+//! fixed point: canonicalising a stored value is the value again.
 
 use core::fmt::Write as _;
 
 /// The normalised form of `value`, or `None` when it is not a work-item URL.
 ///
 /// 1. Surrounding whitespace is trimmed; any whitespace inside refuses.
-/// 2. The scheme is lowercased and must be `http` or `https`.
-/// 3. The fragment (everything from the first `#`) is dropped.
-/// 4. The authority holds no credentials: an `@` refuses. A trailing
+/// 2. A missing scheme is supplied as `https://`.
+/// 3. The scheme is lowercased and must be `http` or `https`.
+/// 4. The fragment (everything from the first `#`) is dropped.
+/// 5. The authority holds no credentials: an `@` refuses. A trailing
 ///    `:<digits>` is the port; a `:` followed by anything else refuses.
-/// 5. The port is dropped when it is the scheme's default, kept otherwise.
-/// 6. The path must be present: a bare host is a site, not an item.
-/// 7. The query is kept verbatim, except an empty one is dropped.
+/// 6. The port is dropped when it is the scheme's default, kept otherwise.
+/// 7. The path must be present: a bare host is a site, not an item.
+/// 8. The query is kept verbatim, except an empty one is dropped.
 #[must_use]
 pub fn canonical(value: &str) -> Option<String> {
     let value = value.trim();
     if value.is_empty() || value.chars().any(char::is_whitespace) {
         return None;
     }
+    // A spelling with no scheme is read as HTTPS: `github.com/o/r/pull/42` is
+    // as common to paste as the full URL.
+    let schemeful;
+    let value = if value.contains("://") {
+        value
+    } else {
+        schemeful = format!("https://{value}");
+        schemeful.as_str()
+    };
     let (scheme, rest) = value.split_once("://")?;
     let scheme = scheme.to_ascii_lowercase();
     if scheme != "http" && scheme != "https" {

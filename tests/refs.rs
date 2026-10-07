@@ -9,6 +9,8 @@ fn the_examples_table() {
             "HTTPS://GitHub.com/o/r/pull/42/",
             "https://github.com/o/r/pull/42",
         ),
+        ("github.com/o/r/issues/3", "https://github.com/o/r/issues/3"),
+        ("GitHub.com/o/r/pull/42/", "https://github.com/o/r/pull/42"),
         (
             "https://github.com:443/o/r/pull/42#files",
             "https://github.com/o/r/pull/42",
@@ -38,7 +40,9 @@ fn the_examples_table() {
 #[test]
 fn the_refusal_list() {
     for input in [
-        "github.com/o/r/pull/1",                    // no scheme
+        "github.com",                               // no path
+        "local/o/r",                                // host is not dotted
+        "user@github.com/o/r",                      // credentials
         "https://user:token@github.com/o/r/pull/1", // credentials
         "https://github.com",                       // no path
         "ftp://github.com/o/r",                     // wrong scheme
@@ -55,6 +59,7 @@ fn the_refusal_list() {
 fn canonical_is_idempotent() {
     for input in [
         "HTTPS://GitHub.com/o/r/pull/42/",
+        "github.com/o/r/issues/3",
         "https://github.com:443/o/r/pull/42#files",
         "https://jira.example.com:8443/browse/PROJ-1",
         "https://bugs.example.org/show_bug.cgi/?id=42#c3",
