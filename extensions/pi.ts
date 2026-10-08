@@ -18,7 +18,7 @@ type HookResponse = {
 // An empty MNEMEX_VAULT counts as unset, as mnemex reads it.
 function vaultRoot(): string {
   const named = process.env.MNEMEX_VAULT;
-  return resolve(named ? named : join(homedir(), "mnemex-vault"));
+  return resolve(named ? named : join(homedir(), "mnemex", "vault"));
 }
 
 function inputPath(input: unknown): string | undefined {

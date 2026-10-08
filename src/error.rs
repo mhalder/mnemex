@@ -9,10 +9,10 @@ use std::path::PathBuf;
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     /// Neither `$MNEMEX_VAULT` nor `$HOME` names a vault.
-    #[error("no vault: set `MNEMEX_VAULT`, or a `$HOME` directory to hold `~/mnemex-vault`")]
+    #[error("no vault: set `MNEMEX_VAULT`, or a `$HOME` directory to hold `~/mnemex/vault`")]
     NoVault,
     /// The one vault does not exist, and the verb reads rather than creates.
-    #[error("no vault at `{}`; set `MNEMEX_VAULT` or create `~/mnemex-vault`", .path.display())]
+    #[error("no vault at `{}`; set `MNEMEX_VAULT` or create `~/mnemex/vault`", .path.display())]
     NoVaultAt {
         /// The directory that should be a vault.
         path: PathBuf,

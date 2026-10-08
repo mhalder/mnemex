@@ -31,7 +31,7 @@ type Output = Record<string, unknown> & { systemMessage?: string };
 // An empty MNEMEX_VAULT counts as unset, as mnemex reads it.
 function vaultRoot(): string {
   const named = process.env.MNEMEX_VAULT;
-  return resolve(named ? named : join(homedir(), "mnemex-vault"));
+  return resolve(named ? named : join(homedir(), "mnemex", "vault"));
 }
 
 function isWithin(root: string, absolute: string): boolean {

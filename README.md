@@ -15,7 +15,7 @@ Two invariants define it:
 2. **Validation on the write.** A violation reaches the writer as a coded,
    spanned diagnostic within milliseconds of the write that caused it.
 
-There is one vault: the directory `$MNEMEX_VAULT` names, or `~/mnemex-vault` when it is
+There is one vault: the directory `$MNEMEX_VAULT` names, or `~/mnemex/vault` when it is
 unset. `memex` names the vault and `mnemex` names the tool that governs it.
 
 ## Install
