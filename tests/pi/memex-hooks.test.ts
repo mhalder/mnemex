@@ -133,8 +133,8 @@ test("a `~/` path is expanded from the home directory, as Pi's tools read it", a
 test("an empty MNEMEX_VAULT counts as unset, as mnemex reads it", async () => {
   const saved = { vault: process.env.MNEMEX_VAULT, home: process.env.HOME };
   const home = join(scratch, "home");
-  const note = join(home, "mnemex-vault", "notes", "202609081100-n.md");
-  mkdirSync(join(home, "mnemex-vault", "notes"), { recursive: true });
+  const note = join(home, "mnemex", "vault", "notes", "202609081100-n.md");
+  mkdirSync(join(home, "mnemex", "vault", "notes"), { recursive: true });
   process.env.MNEMEX_VAULT = "";
   process.env.HOME = home;
   try {

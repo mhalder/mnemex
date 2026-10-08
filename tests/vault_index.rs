@@ -18,14 +18,14 @@ fn the_vault_root_prefers_memex_vault_then_home() {
     assert_eq!(env.expect("env"), Path::new("/tmp/other"));
 
     let home = vault::root_from(None, Some(OsStr::new("/home/x")));
-    assert_eq!(home.expect("home"), Path::new("/home/x/mnemex-vault"));
+    assert_eq!(home.expect("home"), Path::new("/home/x/mnemex/vault"));
 
     let none = vault::root_from(None, None);
     assert!(none.is_err());
 
     // A blank `MNEMEX_VAULT` is the same as unset.
     let blank = vault::root_from(Some(OsStr::new("")), Some(OsStr::new("/home/x")));
-    assert_eq!(blank.expect("home"), Path::new("/home/x/mnemex-vault"));
+    assert_eq!(blank.expect("home"), Path::new("/home/x/mnemex/vault"));
 }
 
 // --- index ------------------------------------------------------------------
