@@ -16,7 +16,7 @@ Two invariants define it:
    spanned diagnostic within milliseconds of the write that caused it.
 
 There is one vault: the directory `$MNEMEX_VAULT` names, or `~/mnemex/vault` when it is
-unset. `memex` names the vault and `mnemex` names the tool that governs it.
+unset.
 
 ## Install
 

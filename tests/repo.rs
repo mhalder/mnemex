@@ -245,10 +245,10 @@ fn several_remotes_without_an_origin_are_named_but_not_chosen() {
     v.checkout_with(
         "work",
         &[
-            ("base", "ssh://git@ssh.example.com/owner/memex-base.git"),
+            ("base", "ssh://git@ssh.example.com/owner/notes-base.git"),
             (
                 "private",
-                "ssh://git@ssh.example.com/owner/memex-private.git",
+                "ssh://git@ssh.example.com/owner/notes-private.git",
             ),
         ],
     );
@@ -258,7 +258,7 @@ fn several_remotes_without_an_origin_are_named_but_not_chosen() {
     let codes: Vec<Code> = ds.iter().map(|d| d.code).collect();
     assert_eq!(codes, [Code::Mx405], "{ds:?}");
     assert!(
-        ds[0].message.contains("memex-base") && ds[0].message.contains("memex-private"),
+        ds[0].message.contains("notes-base") && ds[0].message.contains("notes-private"),
         "the repair must name every remote: {:?}",
         ds[0]
     );
@@ -352,10 +352,10 @@ fn a_claim_that_is_no_remote_of_the_checkout_is_drift() {
     v.checkout_with(
         "work",
         &[
-            ("base", "ssh://git@ssh.example.com/owner/memex-base.git"),
+            ("base", "ssh://git@ssh.example.com/owner/notes-base.git"),
             (
                 "private",
-                "ssh://git@ssh.example.com/owner/memex-private.git",
+                "ssh://git@ssh.example.com/owner/notes-private.git",
             ),
         ],
     );
@@ -363,15 +363,15 @@ fn a_claim_that_is_no_remote_of_the_checkout_is_drift() {
         &v,
         NewArgs {
             path: Some("work"),
-            repo: Some("ssh://git@ssh.example.com/owner/memex.git"),
+            repo: Some("ssh://git@ssh.example.com/owner/notes.git"),
             ..NewArgs::default()
         },
     );
     let codes: Vec<Code> = out.diagnostics.iter().map(|d| d.code).collect();
     assert_eq!(codes, [Code::Mx404], "{:?}", out.diagnostics);
     assert!(
-        out.diagnostics[0].message.contains("memex-base")
-            && out.diagnostics[0].message.contains("memex-private"),
+        out.diagnostics[0].message.contains("notes-base")
+            && out.diagnostics[0].message.contains("notes-private"),
         "the warning must name the remotes it found: {:?}",
         out.diagnostics[0]
     );
@@ -379,7 +379,7 @@ fn a_claim_that_is_no_remote_of_the_checkout_is_drift() {
     let path = v.note(
         "projects",
         "202609061846-q",
-        "status: active\npath: work\nrepo: ssh.example.com/owner/memex-base\n",
+        "status: active\npath: work\nrepo: ssh.example.com/owner/notes-base\n",
     );
     let ds = check::path(&path, v.root(), Env::default()).expect("check");
     assert!(ds.is_empty(), "{ds:?}");
