@@ -9,7 +9,7 @@ Usage: mnemex <COMMAND>
 Commands:
   new         Mint a note
   set         Set a field
-  rename      Retitle a note, and every spoke `project` that names a renamed project
+  rename      Retitle a note, every spoke `project` that names a renamed project, and every body link that names it
   delete      Remove a note
   adopt       Bring an existing markdown file into the vault
   check       Check a note or a whole vault
