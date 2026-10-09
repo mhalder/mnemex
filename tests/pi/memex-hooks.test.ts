@@ -59,9 +59,16 @@ function load(cwd = scratch) {
   };
   return {
     notes,
-    toolResult: (toolName: string, input: Record<string, unknown>) =>
+    toolResult: (toolName: string, input: Record<string, unknown>, structuredContent?: unknown) =>
       handler("tool_result")(
-        { type: "tool_result", toolName, input, content: [{ type: "text", text: "wrote" }], isError: false },
+        {
+          type: "tool_result",
+          toolName,
+          input,
+          content: [{ type: "text", text: "wrote" }],
+          isError: false,
+          ...(structuredContent === undefined ? {} : { structuredContent }),
+        },
         ctx,
       ),
     settled: () => handler("agent_settled")({ type: "agent_settled" }, ctx),
@@ -173,10 +180,32 @@ test("a blocking hook reply fails the tool result with its reason", async () => 
   assert.deepEqual(result, { isError: true, content: [{ type: "text", text: "error[MX102]" }] });
 });
 
+test("a blocking hook reply keeps the tool's structured content", async () => {
+  writeFileSync(reply, JSON.stringify({ decision: "block", reason: "error[MX102]" }));
+  const result = await load().toolResult("write", { path: inside }, { ok: true });
+  assert.deepEqual(result, {
+    structuredContent: { ok: true },
+    isError: true,
+    content: [{ type: "text", text: "error[MX102]" }],
+  });
+});
+
 test("hook warnings are appended to the tool's own content", async () => {
   writeFileSync(reply, JSON.stringify({ hookSpecificOutput: { additionalContext: "warning[MX105]" } }));
   const result = await load().toolResult("write", { path: inside });
   assert.deepEqual(result, {
+    content: [
+      { type: "text", text: "wrote" },
+      { type: "text", text: "mnemex check reported warnings:\n\nwarning[MX105]" },
+    ],
+  });
+});
+
+test("hook warnings keep the tool's structured content", async () => {
+  writeFileSync(reply, JSON.stringify({ hookSpecificOutput: { additionalContext: "warning[MX105]" } }));
+  const result = await load().toolResult("write", { path: inside }, { ok: true });
+  assert.deepEqual(result, {
+    structuredContent: { ok: true },
     content: [
       { type: "text", text: "wrote" },
       { type: "text", text: "mnemex check reported warnings:\n\nwarning[MX105]" },

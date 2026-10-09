@@ -142,8 +142,14 @@ export default function mnemexHooks(pi: ExtensionAPI) {
       return;
     }
 
+    // Replacing `content` drops `structuredContent` unless it is returned too. An
+    // absent one must not add a key, so the result keeps its current shape.
+    const structured =
+      event.structuredContent === undefined ? {} : { structuredContent: event.structuredContent };
+
     if (response.decision === "block") {
       return {
+        ...structured,
         isError: true,
         content: [{ type: "text", text: response.reason ?? "mnemex rejected this completed write" }],
       };
@@ -152,6 +158,7 @@ export default function mnemexHooks(pi: ExtensionAPI) {
     const warning = response.hookSpecificOutput?.additionalContext;
     if (warning) {
       return {
+        ...structured,
         content: [
           ...event.content,
           { type: "text", text: `mnemex check reported warnings:\n\n${warning}` },
