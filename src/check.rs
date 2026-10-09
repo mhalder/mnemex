@@ -448,7 +448,7 @@ fn warn_missing_repo(
 }
 
 /// Check a whole vault. Diagnostics are grouped by note, and the notes appear in
-/// index order.
+/// index order; the vault-level Obsidian rule (`MX407`) is appended after them.
 ///
 /// # Errors
 /// Reports a governed folder that cannot be read.
@@ -467,6 +467,7 @@ pub fn root(root: &Path, env: Env<'_>) -> Result<Vec<Diagnostic>> {
         }
         out.extend(ds);
     }
+    out.extend(crate::obsidian::check(root));
     Ok(out)
 }
 

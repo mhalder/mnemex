@@ -1,0 +1,10 @@
+{
+  "types": {
+    "path": "text",
+    "project": "text",
+    "refs": "multitext",
+    "repo": "text",
+    "status": "date",
+    "tags": "tags"
+  }
+}

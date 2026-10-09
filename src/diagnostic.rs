@@ -46,11 +46,13 @@ pub enum Code {
     Mx405,
     /// the same id names notes in more than one governed folder
     Mx406,
+    /// `.obsidian/types.json` does not match the property types the schema derives
+    Mx407,
 }
 
 impl Code {
     /// Every code, in numeric order.
-    pub const ALL: [Code; 17] = [
+    pub const ALL: [Code; 18] = [
         Code::Mx001,
         Code::Mx002,
         Code::Mx003,
@@ -68,6 +70,7 @@ impl Code {
         Code::Mx404,
         Code::Mx405,
         Code::Mx406,
+        Code::Mx407,
     ];
 
     /// The code as it prints.
@@ -91,6 +94,7 @@ impl Code {
             Code::Mx404 => "MX404",
             Code::Mx405 => "MX405",
             Code::Mx406 => "MX406",
+            Code::Mx407 => "MX407",
         }
     }
 }

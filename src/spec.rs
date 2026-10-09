@@ -62,6 +62,25 @@ impl Shape {
             Shape::Remote => "git remote",
         }
     }
+
+    /// The Obsidian property type for a field named `field` of this shape.
+    ///
+    /// Obsidian has no enum, link, or URL type, so those collapse to `text`;
+    /// every list is `multitext` except `tags`, which Obsidian renders as tags.
+    #[must_use]
+    pub fn obsidian_type(self, field: &str) -> &'static str {
+        match self {
+            Shape::TextList => {
+                if field == "tags" {
+                    "tags"
+                } else {
+                    "multitext"
+                }
+            }
+            Shape::UrlList => "multitext",
+            Shape::Text | Shape::WikiLink | Shape::Remote | Shape::Enum(_) => "text",
+        }
+    }
 }
 
 /// What `mnemex new` writes for a field.
@@ -260,5 +279,16 @@ mod tests {
             "enum: open | done"
         );
         assert_eq!(Shape::Enum(&["open"]).tag(), "enum");
+    }
+
+    #[test]
+    fn every_shape_maps_to_an_obsidian_type() {
+        assert_eq!(Shape::Text.obsidian_type("path"), "text");
+        assert_eq!(Shape::WikiLink.obsidian_type("project"), "text");
+        assert_eq!(Shape::Remote.obsidian_type("repo"), "text");
+        assert_eq!(Shape::Enum(&["open"]).obsidian_type("status"), "text");
+        assert_eq!(Shape::UrlList.obsidian_type("refs"), "multitext");
+        assert_eq!(Shape::TextList.obsidian_type("tags"), "tags");
+        assert_eq!(Shape::TextList.obsidian_type("other"), "multitext");
     }
 }

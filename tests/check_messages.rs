@@ -384,6 +384,113 @@ fn mx406_reports_one_id_in_more_than_one_folder() {
     );
 }
 
+// --- obsidian -------------------------------------------------------------
+
+#[test]
+fn mx407_reports_a_wrong_type_naming_observed_and_expected() {
+    let v = Vault::new();
+    v.raw(
+        ".obsidian",
+        "types.json",
+        r#"{"types":{"path":"text","project":"text","refs":"multitext","repo":"text","status":"date","tags":"tags"}}"#,
+    );
+    let ds = only(&v);
+    assert!(
+        ds.contains(&(
+            Code::Mx407,
+            Severity::Error,
+            "`status` must be typed `text`, not `date`".to_owned()
+        )),
+        "{ds:?}"
+    );
+}
+
+#[test]
+fn mx407_reports_an_unknown_property_by_name() {
+    let v = Vault::new();
+    v.raw(
+        ".obsidian",
+        "types.json",
+        r#"{"types":{"path":"text","project":"text","refs":"multitext","repo":"text","status":"text","tags":"tags","extra":"text"}}"#,
+    );
+    let ds = only(&v);
+    assert!(
+        ds.contains(&(
+            Code::Mx407,
+            Severity::Error,
+            "`extra` is not a field the schema declares; remove it from `.obsidian/types.json`"
+                .to_owned()
+        )),
+        "{ds:?}"
+    );
+}
+
+#[test]
+fn mx407_reports_a_missing_property_by_name() {
+    let v = Vault::new();
+    v.raw(
+        ".obsidian",
+        "types.json",
+        r#"{"types":{"project":"text","refs":"multitext","repo":"text","status":"text","tags":"tags"}}"#,
+    );
+    let ds = only(&v);
+    assert!(
+        ds.contains(&(
+            Code::Mx407,
+            Severity::Error,
+            "`path` is not typed in `.obsidian/types.json`; the schema derives `text`".to_owned()
+        )),
+        "{ds:?}"
+    );
+}
+
+#[test]
+fn mx407_reports_a_missing_file() {
+    let v = Vault::new();
+    v.dir(".obsidian");
+    assert_eq!(
+        only(&v),
+        [(
+            Code::Mx407,
+            Severity::Error,
+            "`.obsidian/types.json` is missing; it must match the property types the schema derives"
+                .to_owned()
+        )]
+    );
+}
+
+#[test]
+fn mx407_reports_unparseable_json() {
+    let v = Vault::new();
+    v.raw(".obsidian", "types.json", "not json");
+    let ds = only(&v);
+    assert_eq!(ds.len(), 1);
+    assert_eq!(ds[0].0, Code::Mx407);
+    assert_eq!(ds[0].1, Severity::Error);
+    assert!(
+        ds[0]
+            .2
+            .starts_with("`.obsidian/types.json` is not valid JSON"),
+        "{}",
+        ds[0].2
+    );
+}
+
+#[test]
+fn mx407_reports_a_document_without_a_types_object() {
+    let v = Vault::new();
+    v.raw(".obsidian", "types.json", r#"{"not_types":{}}"#);
+    assert_eq!(
+        only(&v),
+        [(
+            Code::Mx407,
+            Severity::Error,
+            "`.obsidian/types.json` has no `types` object; it must map each property to its type"
+                .to_owned()
+        )]
+    );
+}
+
 // --- interactions ---------------------------------------------------------
 
 #[test]

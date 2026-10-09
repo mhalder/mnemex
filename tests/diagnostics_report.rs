@@ -21,14 +21,14 @@ fn codes_are_mx_plus_three_zero_padded_digits() {
         codes,
         [
             "MX001", "MX002", "MX003", "MX100", "MX102", "MX104", "MX105", "MX108", "MX110",
-            "MX200", "MX202", "MX204", "MX401", "MX403", "MX404", "MX405", "MX406",
+            "MX200", "MX202", "MX204", "MX401", "MX403", "MX404", "MX405", "MX406", "MX407",
         ]
     );
 }
 
 #[test]
-fn seventeen_rules_and_fourteen_holes() {
-    assert_eq!(Code::ALL.len(), 17);
+fn eighteen_rules_and_fourteen_holes() {
+    assert_eq!(Code::ALL.len(), 18);
     let codes: Vec<&str> = Code::ALL.iter().map(|c| c.as_str()).collect();
     for hole in [
         "MX101", "MX103", "MX106", "MX107", "MX109", "MX201", "MX203", "MX205", "MX206", "MX300",
