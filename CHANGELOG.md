@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0](https://github.com/mhalder/mnemex/compare/v0.2.2...v0.3.0) - 2026-10-09
+
+### Added
+
+- rewrite the body links a rename moves ([#11](https://github.com/mhalder/mnemex/pull/11))
+
 ## [0.2.2](https://github.com/mhalder/mnemex/compare/v0.2.1...v0.2.2) - 2026-10-08
 
 ### Fixed
