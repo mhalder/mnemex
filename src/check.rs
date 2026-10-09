@@ -1,4 +1,4 @@
-//! The seventeen rules.
+//! The check rules.
 //!
 //! Rule interaction is a requirement, not an accident: `MX001` and `MX401` each
 //! report alone; a file outside the five governed folders produces nothing in a
