@@ -512,6 +512,333 @@ fn rename_refuses_a_collision() {
     assert!(e.to_string().contains("already names a note"), "{e}");
 }
 
+#[test]
+fn a_body_link_is_rewritten_to_the_new_id() {
+    let v = Vault::new();
+    v.note("projects", "202609061846-p", "status: active\n");
+    v.note(
+        "plans",
+        "202609070816-x",
+        "project: \"[[202609061846-p]]\"\nstatus: open\n",
+    );
+    v.write(
+        "memories",
+        "202609081100-m",
+        "---\nproject: \"[[202609061846-p]]\"\n---\n\n# M\n\nsee [[202609070816-x]]\n",
+    );
+    let out = authoring::rename(ctx(&v, None), "202609070816-x", "New").expect("rename");
+    assert!(
+        out.notes.iter().any(|n| n == "1 body link rewritten"),
+        "{:?}",
+        out.notes
+    );
+    let m = std::fs::read_to_string(v.root().join("memories/202609081100-m.md")).expect("read");
+    assert!(m.contains("see [[202609070816-new]]"), "{m}");
+    assert!(!m.contains("[[202609070816-x]]"), "{m}");
+}
+
+#[test]
+fn a_body_link_keeps_its_label_and_heading_but_not_a_longer_target() {
+    let v = Vault::new();
+    v.note("projects", "202609061846-p", "status: active\n");
+    v.note(
+        "plans",
+        "202609070816-x",
+        "project: \"[[202609061846-p]]\"\nstatus: open\n",
+    );
+    v.write(
+        "memories",
+        "202609081100-m",
+        "---\nproject: \"[[202609061846-p]]\"\n---\n\n# M\n\n[[202609070816-x|label]] [[202609070816-x#heading]] [[202609070816-x-extra]]\n",
+    );
+    authoring::rename(ctx(&v, None), "202609070816-x", "New").expect("rename");
+    let m = std::fs::read_to_string(v.root().join("memories/202609081100-m.md")).expect("read");
+    assert!(m.contains("[[202609070816-new|label]]"), "{m}");
+    assert!(m.contains("[[202609070816-new#heading]]"), "{m}");
+    assert!(m.contains("[[202609070816-x-extra]]"), "{m}");
+    assert!(
+        !m.contains("[[202609070816-x|") && !m.contains("[[202609070816-x#"),
+        "{m}"
+    );
+}
+
+#[test]
+fn a_body_link_in_code_is_literal_but_prose_on_the_same_line_moves() {
+    let v = Vault::new();
+    v.note("projects", "202609061846-p", "status: active\n");
+    v.note(
+        "plans",
+        "202609070816-x",
+        "project: \"[[202609061846-p]]\"\nstatus: open\n",
+    );
+    v.write(
+        "memories",
+        "202609081100-m",
+        "---\nproject: \"[[202609061846-p]]\"\n---\n\n# M\n\n`inline [[202609070816-x]]` and prose [[202609070816-x]]\n\n```\nfenced [[202609070816-x]]\n```\n",
+    );
+    authoring::rename(ctx(&v, None), "202609070816-x", "New").expect("rename");
+    let m = std::fs::read_to_string(v.root().join("memories/202609081100-m.md")).expect("read");
+    assert!(
+        m.contains("`inline [[202609070816-x]]` and prose [[202609070816-new]]"),
+        "{m}"
+    );
+    assert!(m.contains("fenced [[202609070816-x]]"), "{m}");
+    assert!(!m.contains("prose [[202609070816-x]]"), "{m}");
+}
+
+#[test]
+fn an_inline_code_span_crosses_lines_and_keeps_other_length_runs_literal() {
+    let v = Vault::new();
+    v.note("projects", "202609061846-p", "status: active\n");
+    v.note(
+        "plans",
+        "202609070816-x",
+        "project: \"[[202609061846-p]]\"\nstatus: open\n",
+    );
+    v.write(
+        "memories",
+        "202609081100-m",
+        "---\nproject: \"[[202609061846-p]]\"\n---\n\n# M\n\n`` open [[202609070816-x]]\n` diff [[202609070816-x]] `` close [[202609070816-x]]\n",
+    );
+    authoring::rename(ctx(&v, None), "202609070816-x", "New").expect("rename");
+    let m = std::fs::read_to_string(v.root().join("memories/202609081100-m.md")).expect("read");
+    assert!(
+        m.contains(
+            "`` open [[202609070816-x]]\n` diff [[202609070816-x]] `` close [[202609070816-new]]"
+        ),
+        "{m}"
+    );
+}
+
+#[test]
+fn escaped_backticks_are_literal_so_the_link_between_them_moves() {
+    let v = Vault::new();
+    v.note("projects", "202609061846-p", "status: active\n");
+    v.note(
+        "plans",
+        "202609070816-x",
+        "project: \"[[202609061846-p]]\"\nstatus: open\n",
+    );
+    v.write(
+        "memories",
+        "202609081100-m",
+        "---\nproject: \"[[202609061846-p]]\"\n---\n\n# M\n\nescaped \\` [[202609070816-x]] \\`\n",
+    );
+    authoring::rename(ctx(&v, None), "202609070816-x", "New").expect("rename");
+    let m = std::fs::read_to_string(v.root().join("memories/202609081100-m.md")).expect("read");
+    assert!(m.contains("escaped \\` [[202609070816-new]] \\`"), "{m}");
+}
+
+#[test]
+fn a_code_span_cannot_cross_a_blank_line_so_the_link_between_moves() {
+    let v = Vault::new();
+    v.note("projects", "202609061846-p", "status: active\n");
+    v.note(
+        "plans",
+        "202609070816-x",
+        "project: \"[[202609061846-p]]\"\nstatus: open\n",
+    );
+    v.write(
+        "memories",
+        "202609081100-m",
+        "---\nproject: \"[[202609061846-p]]\"\n---\n\n# M\n\n` open\n\n[[202609070816-x]]\n\n` close\n",
+    );
+    authoring::rename(ctx(&v, None), "202609070816-x", "New").expect("rename");
+    let m = std::fs::read_to_string(v.root().join("memories/202609081100-m.md")).expect("read");
+    assert!(
+        m.contains("` open\n\n[[202609070816-new]]\n\n` close"),
+        "{m}"
+    );
+}
+
+#[test]
+fn a_code_span_crosses_a_nbsp_only_line_and_keeps_its_link() {
+    let v = Vault::new();
+    v.note("projects", "202609061846-p", "status: active\n");
+    v.note(
+        "plans",
+        "202609070816-x",
+        "project: \"[[202609061846-p]]\"\nstatus: open\n",
+    );
+    v.write(
+        "memories",
+        "202609081100-m",
+        "---\nproject: \"[[202609061846-p]]\"\n---\n\n# M\n\n`` open [[202609070816-x]]\n\u{00a0}\n`` close\n",
+    );
+    authoring::rename(ctx(&v, None), "202609070816-x", "New").expect("rename");
+    let m = std::fs::read_to_string(v.root().join("memories/202609081100-m.md")).expect("read");
+    assert!(
+        m.contains("`` open [[202609070816-x]]\n\u{00a0}\n`` close"),
+        "{m}"
+    );
+}
+
+#[test]
+fn a_label_or_heading_without_a_closing_bracket_is_not_a_link() {
+    let v = Vault::new();
+    v.note("projects", "202609061846-p", "status: active\n");
+    v.note(
+        "plans",
+        "202609070816-x",
+        "project: \"[[202609061846-p]]\"\nstatus: open\n",
+    );
+    v.write(
+        "memories",
+        "202609081100-m",
+        "---\nproject: \"[[202609061846-p]]\"\n---\n\n# M\n\n[[202609070816-x|label\n[[202609070816-x#head\n[[202609070816-x|label]]\n[[202609070816-x#heading]]\n",
+    );
+    authoring::rename(ctx(&v, None), "202609070816-x", "New").expect("rename");
+    let m = std::fs::read_to_string(v.root().join("memories/202609081100-m.md")).expect("read");
+    assert!(m.contains("[[202609070816-x|label\n"), "{m}");
+    assert!(m.contains("[[202609070816-x#head\n"), "{m}");
+    assert!(m.contains("[[202609070816-new|label]]"), "{m}");
+    assert!(m.contains("[[202609070816-new#heading]]"), "{m}");
+    assert!(!m.contains("[[202609070816-x|label]]"), "{m}");
+    assert!(!m.contains("[[202609070816-x#heading]]"), "{m}");
+}
+
+#[test]
+fn a_label_or_heading_that_opens_another_link_before_closing_is_not_a_link() {
+    let v = Vault::new();
+    v.note("projects", "202609061846-p", "status: active\n");
+    v.note(
+        "plans",
+        "202609070816-x",
+        "project: \"[[202609061846-p]]\"\nstatus: open\n",
+    );
+    v.write(
+        "memories",
+        "202609081100-m",
+        "---\nproject: \"[[202609061846-p]]\"\n---\n\n# M\n\n[[202609070816-x|unfinished [[other]]\n[[202609070816-x#unfinished [[other]]\n",
+    );
+    authoring::rename(ctx(&v, None), "202609070816-x", "New").expect("rename");
+    let m = std::fs::read_to_string(v.root().join("memories/202609081100-m.md")).expect("read");
+    assert!(m.contains("[[202609070816-x|unfinished [[other]]\n"), "{m}");
+    assert!(m.contains("[[202609070816-x#unfinished [[other]]\n"), "{m}");
+}
+
+#[test]
+fn a_body_link_after_an_unmatched_backtick_is_rewritten_and_an_open_link_is_not() {
+    let v = Vault::new();
+    v.note("projects", "202609061846-p", "status: active\n");
+    v.note(
+        "plans",
+        "202609070816-x",
+        "project: \"[[202609061846-p]]\"\nstatus: open\n",
+    );
+    v.write(
+        "memories",
+        "202609081100-m",
+        "---\nproject: \"[[202609061846-p]]\"\n---\n\n# M\n\na lone ` backtick then [[202609070816-x]] and an open [[202609070816-x\n",
+    );
+    authoring::rename(ctx(&v, None), "202609070816-x", "New").expect("rename");
+    let m = std::fs::read_to_string(v.root().join("memories/202609081100-m.md")).expect("read");
+    assert!(
+        m.contains("a lone ` backtick then [[202609070816-new]]"),
+        "{m}"
+    );
+    assert!(m.contains("an open [[202609070816-x\n"), "{m}");
+}
+
+#[test]
+fn a_body_link_and_a_spoke_project_field_both_move_in_one_file() {
+    let v = Vault::new();
+    v.note("projects", "202609061846-pr", "status: active\n");
+    v.write(
+        "memories",
+        "202609081100-m",
+        "---\nproject: \"[[202609061846-pr]]\"\n---\n\n# M\n\nsee [[202609061846-pr]]\n",
+    );
+    let out = authoring::rename(ctx(&v, None), "202609061846-pr", "New").expect("rename");
+    assert!(
+        out.notes.iter().any(|n| n == "1 link updated"),
+        "{:?}",
+        out.notes
+    );
+    assert!(
+        out.notes.iter().any(|n| n == "1 body link rewritten"),
+        "{:?}",
+        out.notes
+    );
+    let m = std::fs::read_to_string(v.root().join("memories/202609081100-m.md")).expect("read");
+    assert!(m.contains("project: \"[[202609061846-new]]\""), "{m}");
+    assert!(m.contains("see [[202609061846-new]]"), "{m}");
+    assert!(!m.contains("[[202609061846-pr]]"), "{m}");
+}
+
+#[test]
+fn the_renamed_notes_own_body_link_is_rewritten() {
+    let v = Vault::new();
+    v.write(
+        "projects",
+        "202609061846-pr",
+        "---\nstatus: active\n---\n\n# PR\n\nself [[202609061846-pr]]\n",
+    );
+    let out = authoring::rename(ctx(&v, None), "202609061846-pr", "New").expect("rename");
+    assert!(
+        out.notes.iter().any(|n| n == "1 body link rewritten"),
+        "{:?}",
+        out.notes
+    );
+    let m = std::fs::read_to_string(v.root().join("projects/202609061846-new.md")).expect("read");
+    assert!(m.contains("# New"), "{m}");
+    assert!(m.contains("self [[202609061846-new]]"), "{m}");
+    assert!(!m.contains("[[202609061846-pr]]"), "{m}");
+}
+
+#[test]
+fn rename_preview_reports_would_be_rewritten_and_writes_nothing() {
+    let v = Vault::new();
+    v.note("projects", "202609061846-p", "status: active\n");
+    v.note(
+        "plans",
+        "202609070816-x",
+        "project: \"[[202609061846-p]]\"\nstatus: open\n",
+    );
+    v.write(
+        "memories",
+        "202609081100-m",
+        "---\nproject: \"[[202609061846-p]]\"\n---\n\n# M\n\nsee [[202609070816-x]]\n",
+    );
+    let before =
+        std::fs::read_to_string(v.root().join("memories/202609081100-m.md")).expect("read");
+    let out = authoring::rename_preview(ctx(&v, None), "202609070816-x", "New").expect("preview");
+    assert!(
+        out.notes
+            .iter()
+            .any(|n| n == "1 body link would be rewritten"),
+        "{:?}",
+        out.notes
+    );
+    assert_eq!(
+        std::fs::read_to_string(v.root().join("memories/202609081100-m.md")).expect("read"),
+        before,
+        "the preview wrote the body"
+    );
+    assert!(v.root().join("plans/202609070816-x.md").is_file());
+}
+
+#[test]
+fn an_unparseable_body_is_left_and_reported() {
+    let v = Vault::new();
+    v.note("projects", "202609061846-p", "status: active\n");
+    v.note(
+        "plans",
+        "202609070816-x",
+        "project: \"[[202609061846-p]]\"\nstatus: open\n",
+    );
+    v.write("memories", "202609081100-u", "see [[202609070816-x]]\n");
+    let out = authoring::rename(ctx(&v, None), "202609070816-x", "New").expect("rename");
+    assert!(
+        out.notes.iter().any(|n| n
+            .contains("still mentions `202609070816-x` but its frontmatter cannot be parsed; update that link by hand")),
+        "{:?}",
+        out.notes
+    );
+    let u = std::fs::read_to_string(v.root().join("memories/202609081100-u.md")).expect("read");
+    assert_eq!(u, "see [[202609070816-x]]\n");
+}
+
 // --- delete -----------------------------------------------------------------
 
 #[test]
@@ -930,11 +1257,17 @@ fn a_rename_skips_an_unrenderable_spoke_and_reports_body_mentions() {
         "202609070816-x",
         "project: \"[[202609061846-pr]]\"\nstatus: open\nnested:\n  a: 1\n",
     );
-    // A body elsewhere that mentions the old id.
+    // A rewritable body elsewhere that mentions the old id: it moves now.
     v.write(
         "memories",
         "202609081100-m",
         "---\nproject: \"[[202609061846-pr]]\"\n---\n\n# M\n\nsee [[202609061846-pr]]\n",
+    );
+    // An unrenderable body cannot be rewritten safely, so it is reported.
+    v.write(
+        "memories",
+        "202609081101-u",
+        "---\nproject: \"[[202609061846-pr]]\"\nnested:\n  a: 1\n---\n\n# U\n\nsee [[202609061846-pr]]\n",
     );
     let out = authoring::rename(ctx(&v, None), "202609061846-pr", "New").expect("rename");
     assert!(
@@ -945,10 +1278,21 @@ fn a_rename_skips_an_unrenderable_spoke_and_reports_body_mentions() {
         out.notes
     );
     assert!(
+        out.notes.iter().any(|n| n.contains(
+            "links `202609061846-pr` in its body but has frontmatter this tool cannot rewrite without losing it; update that link by hand"
+        )),
+        "{:?}",
         out.notes
+    );
+    assert!(
+        !out.notes
             .iter()
             .any(|n| n.contains("still mentions `202609061846-pr`")),
         "{:?}",
         out.notes
     );
+    let m = std::fs::read_to_string(v.root().join("memories/202609081100-m.md")).expect("read");
+    assert!(m.contains("see [[202609061846-new]]"), "{m}");
+    let u = std::fs::read_to_string(v.root().join("memories/202609081101-u.md")).expect("read");
+    assert!(u.contains("see [[202609061846-pr]]"), "{u}");
 }

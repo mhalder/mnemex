@@ -2,7 +2,7 @@
 source: tests/surface_snapshots.rs
 expression: "help(&[verb])"
 ---
-Retitle a note, and every spoke `project` that names a renamed project
+Retitle a note, every spoke `project` that names a renamed project, and every body link that names it
 
 Usage: mnemex rename [OPTIONS] <NOTE> <TITLE>
 

@@ -8,6 +8,7 @@
 //! failure.
 
 use core::fmt::Write as _;
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use crate::check::{self, Env};
@@ -655,17 +656,225 @@ fn retitle(body: &str, title: &str) -> String {
     out
 }
 
-/// Retitle a note: a new slug on the existing timestamp, the body heading, the
-/// file, and every spoke `project` field that names a renamed project.
+/// Rewrite every body link whose target is `old` exactly, to `new`.
 ///
-/// Bodies are not rewritten — body links are not the tool's business — so a body
-/// elsewhere that still mentions the old id is reported, advisory only. So is a
-/// spoke whose frontmatter cannot be rendered: it is left as it is rather than
-/// rewritten without the value that makes it unrenderable.
+/// A link is `[[old]]`, `[[old|label]]`, or `[[old#heading]]`: the target ends
+/// where the id ends, so `[[old-extra]]` is left alone, and a label or heading
+/// form must still close with `]]`. Text inside a fenced code block or an
+/// inline code span is literal and is never rewritten. An inline code span
+/// opens on a backtick run and closes on the next run of exactly the same
+/// length; a blank line ends the paragraph, and a backtick preceded by an odd
+/// number of backslashes is escaped, so neither delimits a span. A run with no
+/// such partner is literal, so a link after it is still rewritten.
+///
+/// Returns the rewritten body and how many links were rewritten.
+fn rewrite_body_links(body: &str, old: &str, new: &str) -> (String, usize) {
+    let open = format!("[[{old}");
+    let new_open = format!("[[{new}");
+    let literal = literal_ranges(body);
+
+    let mut out = String::with_capacity(body.len());
+    let mut count = 0;
+    let mut i = 0;
+    let bytes = body.as_bytes();
+    let mut ranges = literal.into_iter().peekable();
+
+    while i < bytes.len() {
+        while let Some(&(_, end)) = ranges.peek() {
+            if end <= i {
+                ranges.next();
+            } else {
+                break;
+            }
+        }
+        if let Some(&(start, end)) = ranges.peek()
+            && start <= i
+            && i < end
+        {
+            out.push_str(&body[i..end]);
+            i = end;
+            continue;
+        }
+
+        // Prose. Match the id exactly, with a boundary after it.
+        let rest = &body[i..];
+        if let Some(after) = rest.strip_prefix(&open) {
+            if after.starts_with("]]") {
+                out.push_str(&new_open);
+                out.push_str("]]");
+                i += open.len() + 2;
+                count += 1;
+                continue;
+            }
+            if let Some(tail) = after.strip_prefix('|')
+                && link_closes_on_line(tail)
+            {
+                out.push_str(&new_open);
+                out.push('|');
+                i += open.len() + 1;
+                count += 1;
+                continue;
+            }
+            if let Some(tail) = after.strip_prefix('#')
+                && link_closes_on_line(tail)
+            {
+                out.push_str(&new_open);
+                out.push('#');
+                i += open.len() + 1;
+                count += 1;
+                continue;
+            }
+        }
+        let ch = rest.chars().next().expect("i < len");
+        out.push(ch);
+        i += ch.len_utf8();
+    }
+
+    (out, count)
+}
+
+/// Whether the text after a link target's `|` or `#` closes its own link on
+/// this line: the first `]]` appears before any newline, and no `[[` opens
+/// another link between the boundary and that `]]`.
+fn link_closes_on_line(tail: &str) -> bool {
+    let line_end = tail.find('\n').unwrap_or(tail.len());
+    let line = &tail[..line_end];
+    let Some(close) = line.find("]]") else {
+        return false;
+    };
+    !line[..close].contains("[[")
+}
+
+/// The byte ranges of a body that are literal: fenced code blocks and inline
+/// code spans. A blank line ends a paragraph, so inline scanning does not cross
+/// one. The ranges are disjoint and sorted.
+fn literal_ranges(body: &str) -> Vec<(usize, usize)> {
+    let mut ranges = vec![];
+    let mut fences = Fences::default();
+    let mut prose_start: Option<usize> = None;
+    let mut offset = 0;
+
+    for line in body.split_inclusive('\n') {
+        let start = offset;
+        offset += line.len();
+        let prose = fences.is_prose(line);
+        if prose && !is_blank_line(line) {
+            if prose_start.is_none() {
+                prose_start = Some(start);
+            }
+        } else {
+            if !prose {
+                ranges.push((start, offset));
+            }
+            if let Some(region_start) = prose_start.take() {
+                for (s, e) in inline_code_ranges(&body[region_start..start]) {
+                    ranges.push((region_start + s, region_start + e));
+                }
+            }
+        }
+    }
+    if let Some(region_start) = prose_start {
+        for (s, e) in inline_code_ranges(&body[region_start..]) {
+            ranges.push((region_start + s, region_start + e));
+        }
+    }
+    ranges.sort_unstable();
+    ranges
+}
+
+/// Whether `line` is empty or spaces/tabs only (plus its newline), and so ends
+/// a paragraph. Unicode whitespace such as a non-breaking space is not a blank
+/// line in `CommonMark`, so it does not end one here.
+fn is_blank_line(line: &str) -> bool {
+    let line = line.strip_suffix('\n').unwrap_or(line);
+    let line = line.strip_suffix('\r').unwrap_or(line);
+    line.bytes().all(|b| matches!(b, b' ' | b'\t'))
+}
+
+/// The byte ranges of inline code spans in one prose region, relative to its
+/// start. A span opens on an unescaped backtick run and closes on the next run
+/// of exactly the same length; a run with no partner is literal and opens
+/// nothing.
+fn inline_code_ranges(text: &str) -> Vec<(usize, usize)> {
+    let mut ranges = vec![];
+    let mut i = 0;
+    while i < text.len() {
+        let Some((start, end, run_len)) = backtick_run(text, i) else {
+            break;
+        };
+        if let Some((_, close_end)) = matching_backtick_run(text, end, run_len) {
+            ranges.push((start, close_end));
+            i = close_end;
+        } else {
+            // No partner: the run is literal, so a link after it is prose.
+            i = end;
+        }
+    }
+    ranges
+}
+
+/// The first unescaped backtick run at or after `from`, if there is one: its
+/// byte range and its length. A backtick preceded by an odd number of
+/// backslashes is escaped and is skipped as literal text.
+fn backtick_run(line: &str, from: usize) -> Option<(usize, usize, usize)> {
+    let bytes = line.as_bytes();
+    let mut i = from;
+    while i < bytes.len() {
+        if bytes[i] == b'`' {
+            if is_escaped(line, i) {
+                i += 1;
+                continue;
+            }
+            let start = i;
+            while i < bytes.len() && bytes[i] == b'`' {
+                i += 1;
+            }
+            return Some((start, i, i - start));
+        }
+        i += 1;
+    }
+    None
+}
+
+/// Whether the backtick at `i` is escaped by an odd number of backslashes, and
+/// so is literal text rather than a code-span delimiter.
+fn is_escaped(text: &str, i: usize) -> bool {
+    let bytes = text.as_bytes();
+    let mut backslashes = 0;
+    let mut j = i;
+    while j > 0 && bytes[j - 1] == b'\\' {
+        backslashes += 1;
+        j -= 1;
+    }
+    backslashes % 2 == 1
+}
+
+/// The run that closes an inline code span opened by a run of `open_len`
+/// backticks: the next run of exactly that length, at or after `from`.
+fn matching_backtick_run(line: &str, from: usize, open_len: usize) -> Option<(usize, usize)> {
+    let mut i = from;
+    while let Some((start, end, len)) = backtick_run(line, i) {
+        if len == open_len {
+            return Some((start, end));
+        }
+        i = end;
+    }
+    None
+}
+
+/// Retitle a note: a new slug on the existing timestamp, the body heading, the
+/// file, every spoke `project` field that names a renamed project, and every
+/// body link whose target is the old id.
+///
+/// A body link is rewritten only when its target is the old id exactly, and
+/// text inside a code fence or an inline code span is left alone. A governed
+/// file whose frontmatter cannot be parsed or cannot be rendered without losing
+/// a value is left untouched and named in the outcome, because its link cannot
+/// be rewritten safely.
 ///
 /// # Errors
 /// Refuses a new path that exists. The operation is atomic in effect: if any
-/// spoke rewrite or the move itself fails, nothing is left moved.
+/// rewrite or the move itself fails, nothing is left moved.
 pub fn rename(ctx: Ctx<'_>, note: &str, title: &str) -> Result<Outcome> {
     let index = ctx.index()?;
     let subject = note_of(&index, note)?;
@@ -683,13 +892,21 @@ pub fn rename(ctx: Ctx<'_>, note: &str, title: &str) -> Result<Outcome> {
     ensure_id_free(ctx.root, &new_id, Some(&subject.path))?;
 
     doc.body = retitle(&doc.body, title);
+    // The renamed note's own body is rewritten too, so a self-link moves with it.
+    let own_body_links = if new_id == note {
+        0
+    } else {
+        let (body, n) = rewrite_body_links(&doc.body, note, &new_id);
+        doc.body = body;
+        n
+    };
 
     // Plan every write before performing any of them, and keep what each file
     // held, so a failure part-way can put everything back.
-    let inbound = if new_id == note || kind != Kind::Project {
+    let inbound = if new_id == note {
         Inbound::default()
     } else {
-        plan_inbound(&index, note, &new_id)
+        plan_rewrites(ctx.root, &index, note, &new_id, kind, &subject.path)?
     };
 
     let mut written: Vec<(PathBuf, String)> = vec![];
@@ -730,17 +947,20 @@ pub fn rename(ctx: Ctx<'_>, note: &str, title: &str) -> Result<Outcome> {
             if updated == 1 { "" } else { "s" }
         ));
     }
-    notes.extend(inbound.skipped);
-    // A rename that keeps the id leaves every `[[id]]` in a body still right.
-    if new_id != note {
-        notes.extend(body_mentions(ctx.root, note, "bodies are not rewritten")?);
+    let body_links = inbound.body_links + own_body_links;
+    if body_links > 0 {
+        notes.push(format!(
+            "{body_links} body link{} rewritten",
+            if body_links == 1 { "" } else { "s" }
+        ));
     }
+    notes.extend(inbound.skipped);
 
     outcome(ctx, format!("renamed {note} to {new_id}"), new_path, notes)
 }
 
 /// What [`rename`] would do, without doing any of it: the same validations and
-/// the same spoke-rewrite plan, reported rather than written.
+/// the same link-rewrite plan, reported rather than written.
 ///
 /// # Errors
 /// Refuses exactly what [`rename`] refuses — a title with no slug, a target that
@@ -748,7 +968,7 @@ pub fn rename(ctx: Ctx<'_>, note: &str, title: &str) -> Result<Outcome> {
 pub fn rename_preview(ctx: Ctx<'_>, note: &str, title: &str) -> Result<Outcome> {
     let index = ctx.index()?;
     let subject = note_of(&index, note)?;
-    writable(subject)?;
+    let mut doc = writable(subject)?;
 
     let slug = slug_of(title)?;
     let stamp = id::stamp(note).unwrap_or(ctx.stamp);
@@ -759,10 +979,17 @@ pub fn rename_preview(ctx: Ctx<'_>, note: &str, title: &str) -> Result<Outcome> 
     }
     ensure_id_free(ctx.root, &new_id, Some(&subject.path))?;
 
-    let inbound = if new_id == note || subject.kind != Kind::Project {
+    doc.body = retitle(&doc.body, title);
+    let own_body_links = if new_id == note {
+        0
+    } else {
+        rewrite_body_links(&doc.body, note, &new_id).1
+    };
+
+    let inbound = if new_id == note {
         Inbound::default()
     } else {
-        plan_inbound(&index, note, &new_id)
+        plan_rewrites(ctx.root, &index, note, &new_id, subject.kind, &subject.path)?
     };
 
     let mut notes = vec![format!("would rename {note} to {new_id}")];
@@ -771,6 +998,13 @@ pub fn rename_preview(ctx: Ctx<'_>, note: &str, title: &str) -> Result<Outcome> 
         notes.push(format!(
             "{updated} link{} would be updated",
             if updated == 1 { "" } else { "s" }
+        ));
+    }
+    let body_links = inbound.body_links + own_body_links;
+    if body_links > 0 {
+        notes.push(format!(
+            "{body_links} body link{} would be rewritten",
+            if body_links == 1 { "" } else { "s" }
         ));
     }
     notes.extend(inbound.skipped);
@@ -782,54 +1016,115 @@ pub fn rename_preview(ctx: Ctx<'_>, note: &str, title: &str) -> Result<Outcome> 
     })
 }
 
-/// What renaming a project does to the spokes that name it.
+/// What renaming a note does to the links that name it: every spoke `project`
+/// field and every body link, planned as one write per file.
 #[derive(Default)]
 struct Inbound {
-    /// Each rewritten spoke: its path and its new contents.
+    /// Each rewritten file: its path and its new contents.
     planned: Vec<(PathBuf, String)>,
-    /// How many spokes the planned rewrites change.
+    /// How many spoke `project` links the planned rewrites change.
     updated: usize,
-    /// Advice naming each spoke left as it is, because rendering its
-    /// frontmatter would lose a value.
+    /// How many body link occurrences the planned rewrites change.
+    body_links: usize,
+    /// Advice naming each file left as it is, because it cannot be rewritten
+    /// safely.
     skipped: Vec<String>,
 }
 
-/// Every spoke whose `project` field names `old`, rewritten to name `new`.
+/// Every link that names `old`, planned as one write per file: spokes whose
+/// `project` field names it, and bodies whose prose links it. A file that needs
+/// both is planned once.
 ///
-/// A spoke whose frontmatter cannot be rendered is never rewritten, the same
-/// note `set` refuses; it is named in [`Inbound::skipped`] instead.
-fn plan_inbound(index: &Index, old: &str, new: &str) -> Inbound {
+/// A governed file whose frontmatter cannot be parsed, or cannot be rendered
+/// without losing a value, is never rewritten — the same refusal `set` gives —
+/// and is named in [`Inbound::skipped`] instead.
+fn plan_rewrites(
+    root: &Path,
+    index: &Index,
+    old: &str,
+    new: &str,
+    kind: Kind,
+    subject: &Path,
+) -> Result<Inbound> {
     let mut inbound = Inbound::default();
-    for other in index.spokes_of(old) {
-        let mut doc = other.doc.clone();
-        let Some(field) = doc.get_mut("project") else {
-            continue;
-        };
-        let Value::Scalar(s) = &mut field.value else {
-            continue;
-        };
-        if links::target(s) != Some(old) {
-            continue;
+    let mut planned: BTreeMap<PathBuf, (Kind, Document)> = BTreeMap::new();
+
+    if kind == Kind::Project {
+        for other in index.spokes_of(old) {
+            let mut doc = other.doc.clone();
+            let Some(field) = doc.get_mut("project") else {
+                continue;
+            };
+            let Value::Scalar(s) = &mut field.value else {
+                continue;
+            };
+            if links::target(s) != Some(old) {
+                continue;
+            }
+            if !other.doc.is_renderable() {
+                inbound.skipped.push(format!(
+                    "{} names `{old}` in `project` but has frontmatter this tool cannot rewrite without losing it; update that link by hand",
+                    other.path.display()
+                ));
+                continue;
+            }
+            *s = links::wrap(new);
+            planned.insert(other.path.clone(), (other.kind, doc));
+            inbound.updated += 1;
         }
-        if !other.doc.is_renderable() {
-            inbound.skipped.push(format!(
-                "{} names `{old}` in `project` but has frontmatter this tool cannot rewrite without losing it; update that link by hand",
-                other.path.display()
-            ));
-            continue;
-        }
-        *s = links::wrap(new);
-        inbound
-            .planned
-            .push((other.path.clone(), doc.render(other.kind)));
-        inbound.updated += 1;
     }
-    inbound
+
+    if new != old {
+        for file in crate::vault::governed_files(root)? {
+            if file.path == subject {
+                continue;
+            }
+            let Ok(src) = std::fs::read_to_string(&file.path) else {
+                continue;
+            };
+            let Ok(mut doc) = frontmatter::parse(&src) else {
+                let (_, n) = rewrite_body_links(&src, old, new);
+                if n > 0 {
+                    inbound.skipped.push(format!(
+                        "{} still mentions `{old}` but its frontmatter cannot be parsed; update that link by hand",
+                        file.path.display()
+                    ));
+                }
+                continue;
+            };
+            if !doc.is_renderable() {
+                let (_, n) = rewrite_body_links(&doc.body, old, new);
+                if n > 0 {
+                    inbound.skipped.push(format!(
+                        "{} links `{old}` in its body but has frontmatter this tool cannot rewrite without losing it; update that link by hand",
+                        file.path.display()
+                    ));
+                }
+                continue;
+            }
+            let (body, n) = rewrite_body_links(&doc.body, old, new);
+            if n == 0 {
+                continue;
+            }
+            if let Some((_, existing)) = planned.get_mut(&file.path) {
+                existing.body = body;
+            } else {
+                doc.body = body;
+                planned.insert(file.path.clone(), (file.kind, doc));
+            }
+            inbound.body_links += n;
+        }
+    }
+
+    for (path, (kind, doc)) in planned {
+        inbound.planned.push((path, doc.render(kind)));
+    }
+    Ok(inbound)
 }
 
 /// Notes whose *body* still mentions an id, each with `reason` for why it
-/// matters. Advisory only, with no exit-code effect: body links are out of
-/// scope.
+/// matters. `delete` uses this, advisory only, with no exit-code effect: a
+/// deletion cannot rewrite a body link.
 fn body_mentions(root: &Path, id: &str, reason: &str) -> Result<Vec<String>> {
     let needle = format!("[[{id}]]");
     let mut out = vec![];

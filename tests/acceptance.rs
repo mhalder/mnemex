@@ -155,9 +155,18 @@ fn a_project_rename_that_cannot_rewrite_a_spoke_leaves_everything() {
         "202609070816-x",
         "project: \"[[202609061846-pr]]\"\nstatus: open\n",
     );
+    // A body link in a writable folder is written first, then restored when the
+    // spoke's folder refuses its rewrite.
+    v.write(
+        "memories",
+        "202609081100-m",
+        "---\nproject: \"[[202609061846-pr]]\"\n---\n\n# M\n\nsee [[202609061846-pr]]\n",
+    );
+    let memory = v.root().join("memories/202609081100-m.md");
+    let memory_before = std::fs::read_to_string(&memory).expect("read");
 
-    // The spoke's folder is read-only, so its rewrite fails before the project
-    // is touched.
+    // The spoke's folder is read-only, so its rewrite fails after the body
+    // rewrite has already been made.
     let plans = v.root().join("plans");
     std::fs::set_permissions(&plans, std::fs::Permissions::from_mode(0o555)).expect("chmod");
     let result = authoring::rename(ctx(&v, "202609081102"), "202609061846-pr", "New");
@@ -171,4 +180,11 @@ fn a_project_rename_that_cannot_rewrite_a_spoke_leaves_everything() {
         x.contains("[[202609061846-pr]]"),
         "the spoke was left as it was: {x}"
     );
+    assert_eq!(
+        std::fs::read_to_string(&memory).expect("read"),
+        memory_before,
+        "the body rewrite was not rolled back"
+    );
+    let ds = mnemex::check::root(v.root(), mnemex::check::Env::default()).expect("check");
+    assert!(ds.is_empty(), "the vault is not clean: {ds:?}");
 }

@@ -69,7 +69,8 @@ pub enum Command {
         #[arg(long, conflicts_with = "values")]
         clear: bool,
     },
-    /// Retitle a note, and every spoke `project` that names a renamed project.
+    /// Retitle a note, every spoke `project` that names a renamed project, and
+    /// every body link that names it.
     Rename {
         /// The note's id.
         #[arg(add = ArgValueCompleter::new(complete::any_note))]
