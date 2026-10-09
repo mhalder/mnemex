@@ -179,7 +179,10 @@ extension and other tool-event integrations; agents should not invoke it by
 hand. It judges a written file against the one vault: only a `.md` file
 directly inside one of that vault's governed folders is checked, so a
 repository's own `plans/` folder, or an archive inside the vault, is never
-mistaken for the vault. `check --path` uses the same rule.
+mistaken for the vault. `check --path` uses the same rule. A whole-vault
+`check` also derives each field's Obsidian property type from the schema and
+fails when `.obsidian/types.json` disagrees; `check --path` checks the one
+note and not the file.
 
 ## One writer
 

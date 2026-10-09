@@ -21,6 +21,7 @@ pub mod index;
 pub mod kind;
 pub mod links;
 pub mod markdown;
+pub mod obsidian;
 pub mod path;
 pub mod query;
 pub mod refs;
