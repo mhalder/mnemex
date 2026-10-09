@@ -23,7 +23,7 @@
 [workspace]
 repo_url = "https://github.com/mhalder/mnemex"
 # A release happens only when the release PR is merged, not on every main
-# commit; releasing on every commit races the repository's squash-only merge.
+# commit; releasing on every commit races the repository's linear merge.
 release_always = false
 # The tag, the GitHub Release, and the crates.io publish are all release-plz's.
 # git_only is deliberately NOT set: it would skip `cargo publish` and kill the
