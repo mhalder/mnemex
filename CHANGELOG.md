@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0](https://github.com/mhalder/mnemex/compare/v0.4.0...v0.5.0) - 2026-10-14
+
+### Added
+
+- *(list)* filter by tag with a repeatable --tag
+
+### Changed
+
+- [**breaking**] drop the skill verb and the embedded skill
+
 ## [0.4.0](https://github.com/mhalder/mnemex/compare/v0.3.0...v0.4.0) - 2026-10-09
 
 ### Added
