@@ -136,9 +136,10 @@ close. Context bodies are cut to an output budget (default 16384 bytes).
 
 ## Using with Pi
 
-The skill lives in this repository and installs with the skills CLI, which
-writes it to `~/.agents/skills/mnemex`, the directory Pi reads. The write-check
-extension ships inside the binary and installs with it:
+The skill lives in this repository and installs with the
+[skills CLI](https://github.com/vercel-labs/skills), which writes it to
+`~/.agents/skills/mnemex`, the directory Pi reads. The write-check extension
+ships inside the binary and installs with it:
 
 ```
 $ skills add mhalder/mnemex -g -a pi -a claude-code -y
@@ -153,15 +154,9 @@ missing or stale. It does not touch the vault.
 
 ## Using with Claude Code
 
-Claude Code reads skills from `~/.claude/skills`, so install the skill with the
-[skills CLI](https://github.com/vercel-labs/skills):
-
-```
-$ skills add mhalder/mnemex -g -a pi -a claude-code -y
-```
-
-It writes the canonical file at `~/.agents/skills/mnemex`, the directory Pi
-reads, and makes `~/.claude/skills/mnemex` a symlink to it.
+Claude Code reads skills from `~/.claude/skills`, so run the same skills CLI
+command: it writes the canonical file at `~/.agents/skills/mnemex`, the
+directory Pi reads, and makes `~/.claude/skills/mnemex` a symlink to it.
 
 `mnemex extension claude --install` writes the same write check as one command
 hook, run by Node directly, to `~/.claude/hooks/mnemex.ts` (a directory
