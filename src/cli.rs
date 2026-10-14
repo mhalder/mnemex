@@ -180,15 +180,6 @@ pub enum Command {
         #[arg(long)]
         json: bool,
     },
-    /// Print the embedded agent skill, or install or check the installed one.
-    Skill {
-        /// Write the skill to DIR/SKILL.md. Defaults to ~/.agents/skills/mnemex.
-        #[arg(long, value_name = "DIR", value_hint = ValueHint::DirPath, conflicts_with = "check")]
-        install: Option<Option<PathBuf>>,
-        /// Exit 1 when DIR/SKILL.md is missing or differs from the embedded skill.
-        #[arg(long, value_name = "DIR", value_hint = ValueHint::DirPath, conflicts_with = "install")]
-        check: Option<Option<PathBuf>>,
-    },
     /// Print an embedded hook, or install or check the installed one.
     Extension {
         /// Which agent's hook: Pi's extension or Claude Code's hook.
