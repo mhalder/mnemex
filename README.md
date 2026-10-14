@@ -156,6 +156,19 @@ when it is missing or stale. Neither command touches the vault.
 
 ## Using with Claude Code
 
+`mnemex skill --install` writes only `~/.agents/skills/mnemex`, which is where
+Pi reads it. Claude Code reads `~/.claude/skills`, so install the skill with the
+[skills CLI](https://github.com/vercel-labs/skills) too:
+
+```
+$ skills add mhalder/mnemex -g -a pi -a claude-code -y
+```
+
+Pi takes the canonical file at `~/.agents/skills/mnemex` and Claude Code a
+symlink to it. Run `mnemex skill --install` after it, and `mnemex skill --check`
+whenever the installed file and this binary may disagree: the repository's copy
+tracks its default branch, which can carry a skill newer than the release.
+
 `mnemex extension claude --install` writes the same write check as one command
 hook, run by Node directly, to `~/.claude/hooks/mnemex.ts` (a directory
 argument overrides it). It prints the `settings.json` snippet to register the
