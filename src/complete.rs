@@ -24,7 +24,7 @@ use crate::vault;
 #[must_use]
 pub fn notes(root: &Path, kind: Option<Kind>, typed: &str) -> Vec<CompletionCandidate> {
     let typed = typed.to_lowercase();
-    query::list(root, kind, None)
+    query::list(root, kind, None, &[])
         .unwrap_or_default()
         .into_iter()
         .filter(|n| n.id.contains(&typed) || n.title.to_lowercase().contains(&typed))
@@ -42,7 +42,7 @@ pub fn notes(root: &Path, kind: Option<Kind>, typed: &str) -> Vec<CompletionCand
 #[must_use]
 pub fn tags(root: &Path, typed: &str) -> Vec<CompletionCandidate> {
     let mut seen = BTreeSet::new();
-    for note in query::list(root, None, None).unwrap_or_default() {
+    for note in query::list(root, None, None, &[]).unwrap_or_default() {
         for field in note.fields.into_iter().flatten() {
             if field.key == "tags" {
                 seen.extend(field.value.as_list().unwrap_or_default().iter().cloned());

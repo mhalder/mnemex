@@ -5,6 +5,7 @@
 //! nothing or could not answer fully, 2 usage error, I/O failure, or a refused
 //! verb.
 
+use core::fmt::Write as _;
 use std::io::{Read as _, Write as _};
 use std::path::{Component, Path, PathBuf};
 use std::process::ExitCode;
@@ -147,11 +148,13 @@ fn run(command: &Command) -> Result<u8, Error> {
         Command::List {
             kind,
             project,
+            tags,
             json,
         } => list_command(
             &existing_vault()?,
             kind.as_deref(),
             project.as_deref(),
+            tags,
             *json,
         ),
         Command::Project { for_, json } => {
@@ -373,24 +376,28 @@ fn list_command(
     root: &Path,
     kind: Option<&str>,
     project: Option<&str>,
+    tags: &[String],
     json: bool,
 ) -> Result<u8, Error> {
     let kind = kind.map(parse_kind).transpose()?;
-    let notes = query::list(root, kind, project)?;
+    let notes = query::list(root, kind, project, tags)?;
     print(&if json {
         report::list_json(&notes)
     } else {
         report::list_human(root, &notes)
     });
     if notes.is_empty() {
-        let filter = match (kind, project) {
-            (Some(kind), Some(project)) => {
-                format!(" of kind `{}` for project `{project}`", kind.name())
-            }
-            (Some(kind), None) => format!(" of kind `{}`", kind.name()),
-            (None, Some(project)) => format!(" for project `{project}`"),
-            (None, None) => String::new(),
-        };
+        let mut filter = String::new();
+        if let Some(kind) = kind {
+            let _ = write!(filter, " of kind `{}`", kind.name());
+        }
+        if let Some(project) = project {
+            let _ = write!(filter, " for project `{project}`");
+        }
+        if !tags.is_empty() {
+            let tags: Vec<String> = tags.iter().map(|t| format!("`{t}`")).collect();
+            let _ = write!(filter, " tagged {}", tags.join(" and "));
+        }
         let _ = writeln!(std::io::stderr(), "no notes{filter} in {}", root.display());
         if let Some(project) = project
             && let Some(hint) = query::slug_hint(root, Some(Kind::Project), project)

@@ -89,7 +89,7 @@ fn resolve_finds_nothing_for_an_unknown_or_invalid_id() {
 fn list_returns_every_indexed_note_in_index_order() {
     let v = Vault::new();
     seed(&v);
-    let notes = query::list(v.root(), None, None).expect("list");
+    let notes = query::list(v.root(), None, None, &[]).expect("list");
     assert_eq!(
         notes.iter().map(|n| n.id.as_str()).collect::<Vec<_>>(),
         [
@@ -104,7 +104,7 @@ fn list_returns_every_indexed_note_in_index_order() {
 fn list_filters_to_one_kind() {
     let v = Vault::new();
     seed(&v);
-    let notes = query::list(v.root(), Some(Kind::Plan), None).expect("list");
+    let notes = query::list(v.root(), Some(Kind::Plan), None, &[]).expect("list");
     assert_eq!(notes.len(), 1);
     assert_eq!(notes[0].id, "202609070816-write-enforcement");
 }
@@ -113,7 +113,7 @@ fn list_filters_to_one_kind() {
 fn list_project_keeps_the_spokes_and_excludes_the_project() {
     let v = Vault::new();
     seed(&v);
-    let notes = query::list(v.root(), None, Some("202609061846-mnemex")).expect("list");
+    let notes = query::list(v.root(), None, Some("202609061846-mnemex"), &[]).expect("list");
     assert_eq!(
         notes.iter().map(|n| n.id.as_str()).collect::<Vec<_>>(),
         ["202609070816-write-enforcement", "202609061400-ownership"]
@@ -128,12 +128,90 @@ fn list_does_not_hide_an_unparseable_note() {
         "202609070816-p",
         "---\nproject: [\n---\n\n# Broken\n",
     );
-    let notes = query::list(v.root(), None, None).expect("list");
+    let notes = query::list(v.root(), None, None, &[]).expect("list");
     assert_eq!(notes.len(), 1);
     assert_eq!(notes[0].id, "202609070816-p");
     assert_eq!(notes[0].path, path);
     assert_eq!(notes[0].title, "Broken");
     assert!(notes[0].fields.is_none());
+}
+
+fn tagged(v: &Vault) {
+    seed(v);
+    v.note(
+        "memories",
+        "202609080000-both",
+        "project: \"[[202609061846-mnemex]]\"\ntags:\n  - x\n  - y\n",
+    );
+    v.note(
+        "memories",
+        "202609080001-case",
+        "project: \"[[202609061846-mnemex]]\"\ntags:\n  - X\n  - \"#x\"\n",
+    );
+    v.write(
+        "memories",
+        "202609080002-broken",
+        "---\ntags: [x\n---\n\n# Broken\n",
+    );
+}
+
+fn ids(notes: &[query::NoteObject]) -> Vec<&str> {
+    notes.iter().map(|n| n.id.as_str()).collect()
+}
+
+fn tags(values: &[&str]) -> Vec<String> {
+    values.iter().map(|t| (*t).to_owned()).collect()
+}
+
+#[test]
+fn list_tag_keeps_the_notes_carrying_it_exactly() {
+    let v = Vault::new();
+    tagged(&v);
+    // `X` and `#x` are other tags, and a note that does not parse matches no tag.
+    let notes = query::list(v.root(), None, None, &tags(&["x"])).expect("list");
+    assert_eq!(
+        ids(&notes),
+        ["202609080000-both", "202609070816-write-enforcement"]
+    );
+}
+
+#[test]
+fn list_tags_are_anded() {
+    let v = Vault::new();
+    tagged(&v);
+    let notes = query::list(v.root(), None, None, &tags(&["x", "y"])).expect("list");
+    assert_eq!(ids(&notes), ["202609080000-both"]);
+    let notes = query::list(v.root(), None, None, &tags(&["y", "nope"])).expect("list");
+    assert!(notes.is_empty());
+}
+
+#[test]
+fn list_tag_combines_with_kind_and_project() {
+    let v = Vault::new();
+    tagged(&v);
+    // An `x`-tagged note of another project, which the project filter excludes.
+    v.note("projects", "202609061847-other", "status: active\n");
+    v.note(
+        "memories",
+        "202609080003-elsewhere",
+        "project: \"[[202609061847-other]]\"\ntags:\n  - x\n",
+    );
+    let x = tags(&["x"]);
+    let notes = query::list(v.root(), Some(Kind::Plan), None, &x).expect("list");
+    assert_eq!(ids(&notes), ["202609070816-write-enforcement"]);
+    let notes = query::list(v.root(), None, Some("202609061846-mnemex"), &x).expect("list");
+    assert_eq!(
+        ids(&notes),
+        ["202609080000-both", "202609070816-write-enforcement"]
+    );
+    let notes = query::list(
+        v.root(),
+        Some(Kind::Memory),
+        Some("202609061846-mnemex"),
+        &x,
+    )
+    .expect("list");
+    assert_eq!(ids(&notes), ["202609080000-both"]);
 }
 
 // --- show ------------------------------------------------------------------

@@ -648,6 +648,115 @@ fn a_list_that_matches_nothing_names_the_filter() {
 }
 
 #[test]
+fn list_tag_filters_the_listing_and_the_envelope() {
+    let v = Vault::new();
+    project(&v, "202609061846-p");
+    v.note(
+        "plans",
+        "202609070816-x",
+        "project: \"[[202609061846-p]]\"\nstatus: open\ntags:\n  - subagent-models\n  - pi\n",
+    );
+    v.note(
+        "memories",
+        "202609070900-m",
+        "project: \"[[202609061846-p]]\"\ntags:\n  - pi\n",
+    );
+
+    let (code, out, _) = run(mnemex(&v).args(["list", "--tag", "subagent-models"]));
+    assert_eq!(code, 0, "{out}");
+    assert!(out.contains("202609070816-x"), "{out}");
+    assert!(!out.contains("202609070900-m"), "{out}");
+    assert!(!out.contains("202609061846-p"), "{out}");
+
+    let (code, out, _) = run(mnemex(&v).args(["list", "--tag", "pi", "--json"]));
+    assert_eq!(code, 0);
+    let j: serde_json::Value = serde_json::from_str(&out).expect("json");
+    let ids: Vec<_> = j["notes"]
+        .as_array()
+        .expect("notes")
+        .iter()
+        .map(|n| n["id"].as_str().expect("id"))
+        .collect();
+    assert_eq!(ids, ["202609070900-m", "202609070816-x"]);
+    assert_eq!(j["version"], 1);
+}
+
+#[test]
+fn a_tag_filter_that_matches_nothing_names_the_tags() {
+    let v = Vault::new();
+    project(&v, "202609061846-p");
+    v.note(
+        "plans",
+        "202609070816-x",
+        "project: \"[[202609061846-p]]\"\nstatus: open\ntags:\n  - pi\n",
+    );
+
+    let (code, out, err) = run(mnemex(&v).args(["list", "--tag", "pi", "--tag", "nope"]));
+    assert_eq!(code, 1, "{out}");
+    assert!(err.contains("no notes tagged `pi` and `nope` in"), "{err}");
+
+    let (code, _, err) = run(mnemex(&v).args([
+        "list",
+        "--kind",
+        "adr",
+        "--project",
+        "202609061846-p",
+        "--tag",
+        "pi",
+    ]));
+    assert_eq!(code, 1);
+    assert!(
+        err.contains("no notes of kind `adr` for project `202609061846-p` tagged `pi` in"),
+        "{err}"
+    );
+
+    let (code, out, err) = run(mnemex(&v).args(["list", "--json", "--tag", "nope"]));
+    assert_eq!(code, 1);
+    let j: serde_json::Value = serde_json::from_str(&out).expect("json");
+    assert_eq!(j, serde_json::json!({"version": 1, "notes": []}));
+    assert!(err.contains("no notes tagged `nope` in"), "{err}");
+}
+
+#[test]
+fn repeated_tags_must_all_be_carried() {
+    let v = Vault::new();
+    project(&v, "202609061846-p");
+    for (id, tags) in [
+        ("202609070900-only-x", "  - x\n"),
+        ("202609070901-only-y", "  - y\n"),
+        ("202609070902-both", "  - x\n  - y\n"),
+    ] {
+        v.note(
+            "memories",
+            id,
+            &format!("project: \"[[202609061846-p]]\"\ntags:\n{tags}"),
+        );
+    }
+    let ids = |args: &[&str]| {
+        let (code, out, err) = run(mnemex(&v).args(["list", "--json"]).args(args));
+        assert_eq!(code, 0, "{args:?}: {err}");
+        let j: serde_json::Value = serde_json::from_str(&out).expect("json");
+        j["notes"]
+            .as_array()
+            .expect("notes")
+            .iter()
+            .map(|n| n["id"].as_str().expect("id").to_owned())
+            .collect::<Vec<_>>()
+    };
+
+    assert_eq!(ids(&["--tag", "x", "--tag", "y"]), ["202609070902-both"]);
+    assert_eq!(
+        ids(&["--tag", "x", "--tag", "x"]),
+        ids(&["--tag", "x"]),
+        "a repeated tag is the tag once"
+    );
+    assert_eq!(
+        ids(&["--tag", "x"]),
+        ["202609070900-only-x", "202609070902-both"]
+    );
+}
+
+#[test]
 fn a_slug_that_matches_more_than_one_note_names_every_id() {
     let v = Vault::new();
     // The same title at two stamps: two ids, one slug.

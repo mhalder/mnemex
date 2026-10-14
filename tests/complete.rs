@@ -190,6 +190,7 @@ fn the_binary_answers_each_shell() {
         ask("fish", &["mnemex", "new", "adr", "x", "--tag", "sec"]),
         "security\n"
     );
+    assert_eq!(ask("bash", &["mnemex", "list", "--tag", "sec"]), "security");
     assert_eq!(
         ask("bash", &["mnemex", "set", "202609250900-harden-home", "st"]),
         "status"
