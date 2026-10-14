@@ -9,5 +9,6 @@ Usage: mnemex list [OPTIONS]
 Options:
       --kind <KIND>        Restrict to one kind
       --project <PROJECT>  Keep only the notes whose `project` names this id
+      --tag <TAG>          Keep only the notes carrying this tag. Repeat to require more
       --json               Emit the versioned envelope
   -h, --help               Print help

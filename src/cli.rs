@@ -134,6 +134,9 @@ pub enum Command {
         /// Keep only the notes whose `project` names this id.
         #[arg(long, value_name = "PROJECT", add = ArgValueCompleter::new(complete::project))]
         project: Option<String>,
+        /// Keep only the notes carrying this tag. Repeat to require more.
+        #[arg(long = "tag", value_name = "TAG", add = ArgValueCompleter::new(complete::tag))]
+        tags: Vec<String>,
         /// Emit the versioned envelope.
         #[arg(long)]
         json: bool,

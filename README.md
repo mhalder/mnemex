@@ -63,7 +63,7 @@ mnemex schema [--json]
 mnemex hook
 
 mnemex resolve <id> [--json]
-mnemex list [--kind <k>] [--project <id>] [--json]
+mnemex list [--kind <k>] [--project <id>] [--tag <t>]... [--json]
 mnemex project --for <dir> [--json]
 mnemex show <id> [--json]
 mnemex brief --for <dir> [--budget <bytes>] [--json]

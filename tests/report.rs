@@ -37,7 +37,7 @@ fn resolve_and_list_renderings() {
     assert_eq!(j["note"]["title"], "The Plan");
     assert_eq!(j["note"]["fields"]["tags"], serde_json::json!(["a"]));
 
-    let notes = query::list(v.root(), None, None).expect("list");
+    let notes = query::list(v.root(), None, None, &[]).expect("list");
     assert!(report::list_human(v.root(), &notes).contains("The Plan"));
     let j: serde_json::Value = serde_json::from_str(&report::list_json(&notes)).expect("json");
     assert_eq!(j["notes"][0]["id"], "202609061846-p");

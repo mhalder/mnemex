@@ -106,31 +106,53 @@ pub fn resolve_in(root: &Path, id: &str, kinds: &[Kind]) -> Option<NoteObject> {
     None
 }
 
-/// Every note a valid id names, in index order, optionally one kind or one
-/// project.
+/// Every note a valid id names, in index order, optionally one kind, one
+/// project, and carrying every one of `tags`.
 ///
 /// A note whose frontmatter does not parse is listed too: it is still a note,
 /// and hiding it would make its `MX001` the only sign it exists. `--project`
 /// keeps the notes whose `project` field names the id, which a project itself
-/// never does.
+/// never does. A tag matches exactly as stored, so a note whose frontmatter
+/// does not parse carries none.
 ///
 /// # Errors
 /// Reports a governed folder that cannot be read.
-pub fn list(root: &Path, kind: Option<Kind>, project: Option<&str>) -> Result<Vec<NoteObject>> {
-    if let Some(project_id) = project {
+pub fn list(
+    root: &Path,
+    kind: Option<Kind>,
+    project: Option<&str>,
+    tags: &[String],
+) -> Result<Vec<NoteObject>> {
+    let notes: Vec<NoteObject> = if let Some(project_id) = project {
         let index = Index::build(root)?;
-        return Ok(index
+        index
             .spokes_of(project_id)
             .into_iter()
             .filter(|n| kind.is_none_or(|k| k == n.kind))
             .map(|n| note_object(n.kind, n.path.clone(), n.id.clone()))
-            .collect());
+            .collect()
+    } else {
+        crate::vault::governed_files(root)?
+            .into_iter()
+            .filter(|f| id::is_valid(&f.stem) && kind.is_none_or(|k| k == f.kind))
+            .map(|f| note_object(f.kind, f.path.clone(), f.stem.clone()))
+            .collect()
+    };
+    Ok(notes.into_iter().filter(|n| carries(n, tags)).collect())
+}
+
+/// Whether `note` carries every one of `tags`.
+fn carries(note: &NoteObject, tags: &[String]) -> bool {
+    if tags.is_empty() {
+        return true;
     }
-    Ok(crate::vault::governed_files(root)?
-        .into_iter()
-        .filter(|f| id::is_valid(&f.stem) && kind.is_none_or(|k| k == f.kind))
-        .map(|f| note_object(f.kind, f.path.clone(), f.stem.clone()))
-        .collect())
+    let held = note
+        .fields
+        .as_ref()
+        .and_then(|fs| fs.iter().find(|f| f.key == "tags"))
+        .and_then(|f| f.value.as_list())
+        .unwrap_or_default();
+    tags.iter().all(|t| held.contains(t))
 }
 
 /// The full ids of every note whose slug half is `value`, restricted to `kind`
@@ -144,7 +166,7 @@ pub fn slug_matches(root: &Path, kind: Option<Kind>, value: &str) -> Vec<String>
     if id::is_valid(value) {
         return vec![];
     }
-    list(root, kind, None)
+    list(root, kind, None, &[])
         .unwrap_or_default()
         .into_iter()
         .filter(|n| id::slug(&n.id) == Some(value))

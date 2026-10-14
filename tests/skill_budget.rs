@@ -96,6 +96,7 @@ fn the_skill_routes_to_the_tool_for_everything_the_tool_answers() {
     for verb in [
         "mnemex schema",
         "mnemex show",
+        "mnemex list --tag",
         "mnemex resolve",
         "mnemex project",
         "mnemex brief",

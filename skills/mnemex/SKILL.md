@@ -7,9 +7,10 @@ description: Record and query notes in the governed markdown vault with mnemex. 
 
 `mnemex schema` is the schema — kinds, fields, closed enums, defaults, and body
 scaffolds. `<verb> --help` is the surface. Never restate either, and never grep
-the vault: `mnemex show`, `mnemex list --project`, `mnemex project
---for`, and `mnemex brief --for` answer from outside. `mnemex resolve <id>`
-finds one note by id.
+the vault: `mnemex show`, `mnemex list --project`, `mnemex list --tag` (notes
+carrying every given tag), `mnemex project --for`, and `mnemex brief --for`
+answer from outside. `mnemex resolve <id>`
+finds one note by id and prints its path; read the body from there.
 
 ## Workflow
 
@@ -35,8 +36,10 @@ A replaced ADR is set `deprecated`; the replacing ADR links it in its Context.
 
 - Titles under eight words.
 - A note that records a tracker item carries that item's URL as a ref — `--ref`
-  on the mint, `mnemex set <id> refs <url>` later. Paste any spelling; the tool
-  normalises it.
+  on the mint, `mnemex set <id> refs <url>...` later. Paste any spelling; the
+  tool normalises it.
+- `mnemex set` on a list field replaces the whole list: give it every value,
+  old and new.
 
 ## Hard rules
 
