@@ -54,7 +54,6 @@ mnemex rename <note> <new title> [--dry-run]
 mnemex delete <note>
 mnemex adopt <file> --kind <k> [--project <id>] [--status <s>] [--tag <t>]... [--ref <url>]...
 
-mnemex skill [--install [dir]] [--check [dir]]
 mnemex extension <pi|claude> [--install [dir]] [--check [dir]]
 mnemex completion <bash|zsh|fish|elvish|powershell>
 
@@ -137,37 +136,32 @@ close. Context bodies are cut to an output budget (default 16384 bytes).
 
 ## Using with Pi
 
-The skill and the write-check extension ship inside the binary and install
-with it:
+The skill lives in this repository and installs with the skills CLI, which
+writes it to `~/.agents/skills/mnemex`, the directory Pi reads. The write-check
+extension ships inside the binary and installs with it:
 
 ```
-$ mnemex skill --install
-created ~/.agents/skills/mnemex/SKILL.md
+$ skills add mhalder/mnemex -g -a pi -a claude-code -y
 $ mnemex extension pi --install
 created ~/.pi/agent/extensions/mnemex.ts
 ```
 
-`skill` writes the agent skill; `extension pi` writes the Pi extension. Each
-defaults to its directory above — `skill` to `~/.agents/skills/mnemex`,
-`extension pi` to `$PI_CODING_AGENT_DIR/extensions` or
-`~/.pi/agent/extensions` — and a directory argument overrides it.
-`--check` replaces `--install` to byte-compare the installed file and exit 1
-when it is missing or stale. Neither command touches the vault.
+`extension pi` writes the Pi extension to `$PI_CODING_AGENT_DIR/extensions` or
+`~/.pi/agent/extensions`, and a directory argument overrides it. `--check`
+replaces `--install` to byte-compare the installed file and exit 1 when it is
+missing or stale. It does not touch the vault.
 
 ## Using with Claude Code
 
-`mnemex skill --install` writes only `~/.agents/skills/mnemex`, which is where
-Pi reads it. Claude Code reads `~/.claude/skills`, so install the skill with the
-[skills CLI](https://github.com/vercel-labs/skills) too:
+Claude Code reads skills from `~/.claude/skills`, so install the skill with the
+[skills CLI](https://github.com/vercel-labs/skills):
 
 ```
 $ skills add mhalder/mnemex -g -a pi -a claude-code -y
 ```
 
-Pi takes the canonical file at `~/.agents/skills/mnemex` and Claude Code a
-symlink to it. Run `mnemex skill --install` after it, and `mnemex skill --check`
-whenever the installed file and this binary may disagree: the repository's copy
-tracks its default branch, which can carry a skill newer than the release.
+It writes the canonical file at `~/.agents/skills/mnemex`, the directory Pi
+reads, and makes `~/.claude/skills/mnemex` a symlink to it.
 
 `mnemex extension claude --install` writes the same write check as one command
 hook, run by Node directly, to `~/.claude/hooks/mnemex.ts` (a directory

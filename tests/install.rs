@@ -1,4 +1,4 @@
-//! The install/print verbs: `skill`, `extension`, and `completion`.
+//! The install/print verbs: `extension` and `completion`.
 //!
 //! These live in the binary, so they are driven through `mnemex` itself.
 
@@ -30,85 +30,6 @@ fn stdout(out: &std::process::Output) -> String {
 }
 
 #[test]
-fn skill_prints_the_embedded_skill() {
-    let out = run(&["skill"]);
-    assert!(out.status.success(), "{out:?}");
-    let text = stdout(&out);
-    assert!(text.starts_with("---\nname: mnemex\n"), "{text}");
-    assert!(text.contains("`mnemex schema`"), "{text}");
-}
-
-#[test]
-fn skill_installs_and_reports_each_outcome() {
-    let dir = tempfile::tempdir().expect("tempdir");
-    let target = dir.path().join("skills");
-
-    let out = run(&["skill", "--install", target.to_str().unwrap()]);
-    assert!(out.status.success(), "{out:?}");
-    assert_eq!(
-        stdout(&out),
-        format!("created {}/SKILL.md\n", target.display())
-    );
-    assert_eq!(
-        std::fs::read(target.join("SKILL.md")).expect("read"),
-        include_bytes!("../skills/mnemex/SKILL.md")
-    );
-
-    let out = run(&["skill", "--install", target.to_str().unwrap()]);
-    assert_eq!(
-        stdout(&out),
-        format!("up to date {}/SKILL.md\n", target.display())
-    );
-
-    std::fs::write(target.join("SKILL.md"), "stale").expect("write");
-    let out = run(&["skill", "--install", target.to_str().unwrap()]);
-    assert_eq!(
-        stdout(&out),
-        format!("updated {}/SKILL.md\n", target.display())
-    );
-    assert_eq!(
-        std::fs::read(target.join("SKILL.md")).expect("read"),
-        include_bytes!("../skills/mnemex/SKILL.md")
-    );
-}
-
-#[test]
-fn skill_check_exits_one_when_missing_or_stale() {
-    let dir = tempfile::tempdir().expect("tempdir");
-    let missing = dir.path().join("nope");
-
-    let out = run(&["skill", "--check", missing.to_str().unwrap()]);
-    assert_eq!(out.status.code(), Some(1), "{out:?}");
-
-    let target = dir.path().join("skills");
-    run(&["skill", "--install", target.to_str().unwrap()]);
-    assert_eq!(
-        run(&["skill", "--check", target.to_str().unwrap()])
-            .status
-            .code(),
-        Some(0)
-    );
-
-    std::fs::write(target.join("SKILL.md"), "stale").expect("write");
-    let out = run(&["skill", "--check", target.to_str().unwrap()]);
-    assert_eq!(out.status.code(), Some(1), "{out:?}");
-}
-
-#[test]
-fn check_against_a_directory_exits_two_not_one() {
-    let dir = tempfile::tempdir().expect("tempdir");
-    let target = dir.path().join("skills");
-    std::fs::create_dir_all(target.join("SKILL.md")).expect("mkdir");
-
-    let out = run(&["skill", "--check", target.to_str().unwrap()]);
-    assert_eq!(out.status.code(), Some(2), "{out:?}");
-    assert!(
-        !String::from_utf8_lossy(&out.stderr).contains("missing or out of date"),
-        "{out:?}"
-    );
-}
-
-#[test]
 fn extension_prints_and_installs_a_hook() {
     let out = run(&["extension", "pi"]);
     assert!(out.status.success(), "{out:?}");
@@ -127,11 +48,61 @@ fn extension_prints_and_installs_a_hook() {
         include_bytes!("../extensions/pi.ts")
     );
 
+    // A second install reports no change; a modified file is rewritten.
+    let out = run(&["extension", "pi", "--install", target.to_str().unwrap()]);
+    assert_eq!(
+        stdout(&out),
+        format!("up to date {}/mnemex.ts\n", target.display())
+    );
+
+    std::fs::write(target.join("mnemex.ts"), "stale").expect("write");
+    let out = run(&["extension", "pi", "--install", target.to_str().unwrap()]);
+    assert_eq!(
+        stdout(&out),
+        format!("updated {}/mnemex.ts\n", target.display())
+    );
+
     let out = run(&["extension", "pi", "--check", target.to_str().unwrap()]);
     assert_eq!(out.status.code(), Some(0), "{out:?}");
     assert_eq!(
         stdout(&out),
         format!("up to date {}/mnemex.ts\n", target.display())
+    );
+}
+
+#[test]
+fn extension_check_exits_one_when_missing_or_stale() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let missing = dir.path().join("nope");
+
+    let out = run(&["extension", "pi", "--check", missing.to_str().unwrap()]);
+    assert_eq!(out.status.code(), Some(1), "{out:?}");
+
+    let target = dir.path().join("ext");
+    run(&["extension", "pi", "--install", target.to_str().unwrap()]);
+    assert_eq!(
+        run(&["extension", "pi", "--check", target.to_str().unwrap()])
+            .status
+            .code(),
+        Some(0)
+    );
+
+    std::fs::write(target.join("mnemex.ts"), "stale").expect("write");
+    let out = run(&["extension", "pi", "--check", target.to_str().unwrap()]);
+    assert_eq!(out.status.code(), Some(1), "{out:?}");
+}
+
+#[test]
+fn check_against_a_directory_exits_two_not_one() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let target = dir.path().join("ext");
+    std::fs::create_dir_all(target.join("mnemex.ts")).expect("mkdir");
+
+    let out = run(&["extension", "pi", "--check", target.to_str().unwrap()]);
+    assert_eq!(out.status.code(), Some(2), "{out:?}");
+    assert!(
+        !String::from_utf8_lossy(&out.stderr).contains("missing or out of date"),
+        "{out:?}"
     );
 }
 
@@ -151,16 +122,9 @@ fn extension_claude_install_prints_the_registration_snippet() {
         "{text}"
     );
     assert!(text.contains("\"matcher\": \"Write|Edit\""), "{text}");
-}
 
-#[test]
-fn skill_defaults_to_the_home_skill_directory() {
-    let dir = tempfile::tempdir().expect("tempdir");
-    let out = run_home(dir.path(), &["skill", "--install"]);
-    assert!(out.status.success(), "{out:?}");
-    let path = dir.path().join(".agents/skills/mnemex/SKILL.md");
-    assert_eq!(stdout(&out), format!("created {}\n", path.display()));
-    assert!(path.is_file());
+    let out = run(&["extension", "claude", "--check", target.to_str().unwrap()]);
+    assert_eq!(out.status.code(), Some(0), "{out:?}");
 }
 
 #[test]
@@ -219,6 +183,6 @@ fn completion_prints_each_shells_activation_snippet() {
 
 #[test]
 fn install_and_check_are_mutually_exclusive() {
-    let out = run(&["skill", "--install", "--check"]);
+    let out = run(&["extension", "pi", "--install", "--check"]);
     assert_eq!(out.status.code(), Some(2), "{out:?}");
 }

@@ -21,14 +21,10 @@ use mnemex::query::{self, ProjectAnswer};
 use mnemex::report::{self, Summary};
 use mnemex::{hook, schema, vault};
 
-/// The embedded agent skill.
-const SKILL: &str = include_str!("../skills/mnemex/SKILL.md");
 /// The embedded Pi extension hook.
 const PI_HOOK: &str = include_str!("../extensions/pi.ts");
 /// The embedded Claude Code command hook.
 const CLAUDE_HOOK: &str = include_str!("../hooks/claude.ts");
-/// The filename the skill is installed as.
-const SKILL_FILE: &str = "SKILL.md";
 /// The filename the Pi extension and the Claude hook are installed as.
 const EXTENSION_FILE: &str = "mnemex.ts";
 
@@ -170,17 +166,6 @@ fn run(command: &Command) -> Result<u8, Error> {
                 budget.unwrap_or(brief::DEFAULT_BUDGET),
                 *json,
             )
-        }
-        Command::Skill { install, check } => {
-            let mode = match (install, check) {
-                (Some(dir), None) => InstallMode::Install(dir.clone()),
-                (None, Some(dir)) => InstallMode::Check(dir.clone()),
-                (None, None) => InstallMode::Print,
-                (Some(_), Some(_)) => {
-                    unreachable!("`--install` and `--check` are mutually exclusive")
-                }
-            };
-            skill_command(mode)
         }
         Command::Extension {
             target,
@@ -518,29 +503,6 @@ enum InstallMode {
     Check(Option<PathBuf>),
 }
 
-/// Print the skill, or install or check the installed one.
-fn skill_command(mode: InstallMode) -> Result<u8, Error> {
-    match mode {
-        InstallMode::Install(dir) => {
-            let dir = skill_dir(dir.as_deref())?;
-            install_file(&dir.join(SKILL_FILE), SKILL.as_bytes())?;
-            Ok(OK)
-        }
-        InstallMode::Check(dir) => {
-            let dir = skill_dir(dir.as_deref())?;
-            check_file(
-                &dir.join(SKILL_FILE),
-                SKILL.as_bytes(),
-                &format!("mnemex skill --install {}", dir.display()),
-            )
-        }
-        InstallMode::Print => {
-            print(SKILL);
-            Ok(OK)
-        }
-    }
-}
-
 /// Print a hook, or install or check the installed one.
 fn extension_command(target: ExtensionTarget, mode: InstallMode) -> Result<u8, Error> {
     let contents = match target {
@@ -574,16 +536,6 @@ fn extension_command(target: ExtensionTarget, mode: InstallMode) -> Result<u8, E
             Ok(OK)
         }
     }
-}
-
-/// The directory a skill lives in: an explicit one, or `~/.agents/skills/mnemex`.
-fn skill_dir(explicit: Option<&Path>) -> Result<PathBuf, Error> {
-    if let Some(dir) = explicit {
-        return Ok(dir.to_path_buf());
-    }
-    Ok(home()
-        .ok_or(Error::NoInstallDirectory)?
-        .join(".agents/skills/mnemex"))
 }
 
 /// The directory a hook lives in: an explicit one, or the agent's default.

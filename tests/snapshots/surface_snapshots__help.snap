@@ -20,7 +20,6 @@ Commands:
   project     Find the project that owns a directory
   show        What a note belongs to: its project and its project's spokes
   brief       The one command a session runs at start
-  skill       Print the embedded agent skill, or install or check the installed one
   extension   Print an embedded hook, or install or check the installed one
   completion  Print the shell-completion activation snippet
   help        Print this message or the help of the given subcommand(s)
