@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0](https://github.com/mhalder/mnemex/compare/v0.5.0...v0.6.0) - 2026-11-05
+
+### Added
+
+- scope plans to one closable task with a follow-ups section
+
 ## [0.5.0](https://github.com/mhalder/mnemex/compare/v0.4.0...v0.5.0) - 2026-10-14
 
 ### Added
