@@ -32,6 +32,12 @@ Admit a note only when one of three rules says so:
 
 A replaced ADR is set `deprecated`; the replacing ADR links it in its Context.
 
+A plan is one task a few sessions can close, usually one change or merge
+request. Work beyond its goal is a plain bullet under the follow-ups
+heading, never a box, since the scaffold's box is a step; mint it as its own
+plan only when its work starts. Close a plan once its goal is met, follow-ups
+and all; a plan that cannot close is too big, so split it.
+
 ## Conventions
 
 - Titles under eight words.

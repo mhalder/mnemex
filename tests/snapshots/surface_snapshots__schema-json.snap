@@ -66,8 +66,8 @@ expression: "String::from_utf8_lossy(&out.stdout)"
     {
       "kind": "plan",
       "folder": "plans",
-      "purpose": "A body of steps for one project; `open` until set `done`.",
-      "scaffold": "## Goal\n\n## Steps\n\n- [ ] \n",
+      "purpose": "One focused task for one project, closable in a few sessions; `open` until set `done`.",
+      "scaffold": "## Goal\n\n## Steps\n\n- [ ] \n\n## Follow-ups\n",
       "fields": [
         {
           "name": "project",

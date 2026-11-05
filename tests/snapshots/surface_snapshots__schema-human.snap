@@ -29,7 +29,7 @@ memory (memories/)
     ## Details
 
 plan (plans/)
-  purpose: A body of steps for one project; `open` until set `done`.
+  purpose: One focused task for one project, closable in a few sessions; `open` until set `done`.
   project       required  wiki-link to project
   status        required  enum: open | done
   tags          optional  text list
@@ -40,6 +40,8 @@ plan (plans/)
     ## Steps
 
     - [ ] 
+
+    ## Follow-ups
 
 adr (adrs/)
   purpose: A decision that constrains future work on one project.

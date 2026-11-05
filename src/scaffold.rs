@@ -12,7 +12,7 @@ pub fn sections(kind: Kind) -> &'static str {
     match kind {
         Kind::Project => "## Purpose\n\n## Boundaries\n\n## Notes\n",
         Kind::Memory => "## Summary\n\n## Details\n",
-        Kind::Plan => "## Goal\n\n## Steps\n\n- [ ] \n",
+        Kind::Plan => "## Goal\n\n## Steps\n\n- [ ] \n\n## Follow-ups\n",
         Kind::Adr => "## Context\n\n## Decision\n\n## Considered options\n\n## Consequences\n",
         Kind::Context => {
             "## Summary\n\n## Language\n\n## Relationships\n\n## Example dialogue\n\n## Flagged ambiguities\n"
@@ -38,7 +38,9 @@ pub fn purpose(kind: Kind) -> &'static str {
         Kind::Memory => {
             "Durable knowledge for one project that the repository, its git log, and its tracker cannot supply."
         }
-        Kind::Plan => "A body of steps for one project; `open` until set `done`.",
+        Kind::Plan => {
+            "One focused task for one project, closable in a few sessions; `open` until set `done`."
+        }
         Kind::Adr => "A decision that constrains future work on one project.",
         Kind::Context => "The vocabulary and relationships of one project's bounded area.",
     }
