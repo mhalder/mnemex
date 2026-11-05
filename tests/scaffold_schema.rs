@@ -26,7 +26,10 @@ fn the_scaffolds_match_the_kind_table() {
         ["## Purpose", "## Boundaries", "## Notes"]
     );
     assert_eq!(sections(Kind::Memory), ["## Summary", "## Details"]);
-    assert_eq!(sections(Kind::Plan), ["## Goal", "## Steps"]);
+    assert_eq!(
+        sections(Kind::Plan),
+        ["## Goal", "## Steps", "## Follow-ups"]
+    );
     assert_eq!(
         sections(Kind::Adr),
         [
@@ -52,7 +55,7 @@ fn the_scaffolds_match_the_kind_table() {
 fn a_plan_scaffold_carries_an_unchecked_box() {
     assert_eq!(
         scaffold::body(Kind::Plan, "T"),
-        "\n# T\n\n## Goal\n\n## Steps\n\n- [ ] \n"
+        "\n# T\n\n## Goal\n\n## Steps\n\n- [ ] \n\n## Follow-ups\n"
     );
 }
 
