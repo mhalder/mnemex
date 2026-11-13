@@ -257,6 +257,36 @@ test("unchanged findings are shown once, and a vault that turns clean says so on
   assert.equal(h.notes.length, 3);
 });
 
+test("many findings are one line, shown again when they change at the same counts", async () => {
+  const h = load();
+  const finding = (n: number) => ({
+    path: `/v/projects/20260908110${n}-p.md`,
+    code: "MX403",
+    severity: "warning",
+    message: "`path` names `/src/p`, which is not a directory here",
+    span: { line: 2, column: 7 },
+  });
+  const sweep = (...ns: number[]) =>
+    JSON.stringify({
+      version: 1,
+      checked: 9,
+      diagnostics: ns.map(finding),
+      summary: { error: 0, warning: ns.length, info: 0 },
+    });
+  const line = (n: number) =>
+    `mnemex check: 0 error(s), ${n} warning(s) in 9 note(s); run \`mnemex check\` for details`;
+
+  writeFileSync(reply, sweep(1, 2, 3));
+  await h.settled();
+  writeFileSync(reply, sweep(1, 2, 4));
+  await h.settled();
+  await h.settled();
+  assert.deepEqual(h.notes, [
+    ["warning", line(3)],
+    ["warning", line(3)],
+  ]);
+});
+
 test("each session shows standing findings once", async () => {
   writeFileSync(reply, oneWarning);
   const first = load();
@@ -304,8 +334,7 @@ test("a sweep that finds only warnings reports them instead of staying silent", 
   assert.deepEqual(h.notes, [
     [
       "warning",
-      "0 error(s), 1 warning(s) in 2 note(s)\n\n" +
-        "/v/notes/202609081100-n.md:3:7: warning[MX405]: `repo` is not set",
+      "mnemex check: 0 error(s), 1 warning(s) in 2 note(s); run `mnemex check` for details",
     ],
   ]);
 });
@@ -334,8 +363,7 @@ test("a sweep that finds errors reports them as errors", async () => {
   assert.deepEqual(h.notes, [
     [
       "error",
-      "1 error(s), 0 warning(s) in 1 note(s)\n\n" +
-        "/v/notes/202609081100-n.md:2:10: error[MX202]: `project` points at `nope`",
+      "mnemex check: 1 error(s), 0 warning(s) in 1 note(s); run `mnemex check` for details",
     ],
   ]);
 });

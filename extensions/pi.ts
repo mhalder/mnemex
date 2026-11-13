@@ -84,13 +84,17 @@ type CheckEnvelope = {
   summary?: { error?: number; warning?: number; info?: number };
 };
 
-// The findings the sweep should report, or nothing when the vault is clean.
+// The findings the sweep should report, or nothing when the vault is clean:
+// one line to show, and the full list, which decides whether they changed.
 //
 // `check` exits 0 when it finds only warnings, so deciding from the exit code
 // alone makes every warning invisible — and a write made outside Pi is exactly
 // the case no per-write hook saw, which is the gap this sweep exists to close.
+//
+// The line holds only the counts: a vault with many findings would otherwise
+// fill the screen, and `mnemex check` lists them on request.
 function findings(envelope: CheckEnvelope):
-  | { errors: number; warnings: number; text: string }
+  | { errors: number; line: string; text: string }
   | undefined {
   const errors = envelope.summary?.error ?? 0;
   const warnings = envelope.summary?.warning ?? 0;
@@ -105,11 +109,12 @@ function findings(envelope: CheckEnvelope):
       return `${where}: ${d.severity}[${d.code}]: ${d.message}`;
     })
     .join("\n");
-  return { errors, warnings, text };
+  const line = `mnemex check: ${errors} error(s), ${warnings} warning(s) in ${envelope.checked ?? 0} note(s); run \`mnemex check\` for details`;
+  return { errors, line, text };
 }
 
 export default function mnemexHooks(pi: ExtensionAPI) {
-  // What the sweep last showed, so an unchanged vault stays silent. Empty is a
+  // What the sweep last found, so an unchanged vault stays silent. Empty is a
   // clean vault, and a new session starts there: one that starts clean says
   // nothing, and one that starts dirty says so once.
   let shown = "";
@@ -184,26 +189,29 @@ export default function mnemexHooks(pi: ExtensionAPI) {
       envelope = undefined;
     }
 
+    // `found` is what changed-or-not is decided on; `message` is what is shown.
+    let found = "";
     let message = "";
     let level: "error" | "warning" | "info" = "info";
     if (!envelope) {
       // An exit-0 sweep with no envelope is not a failure: only a refusal is.
       if (check.code !== 0) {
         message = check.out || check.err || "mnemex check failed";
+        found = message;
         level = "error";
       }
     } else {
-      const found = findings(envelope);
-      if (found) {
-        const trailer = `${found.errors} error(s), ${found.warnings} warning(s) in ${envelope.checked ?? 0} note(s)`;
-        message = `${trailer}\n\n${found.text}`;
-        level = found.errors > 0 ? "error" : "warning";
+      const result = findings(envelope);
+      if (result) {
+        message = result.line;
+        found = `${result.line}\n${result.text}`;
+        level = result.errors > 0 ? "error" : "warning";
       }
     }
 
-    if (message === shown) return;
-    const recovered = message === "";
-    shown = message;
+    if (found === shown) return;
+    const recovered = found === "";
+    shown = found;
     ctx.ui.notify(recovered ? "mnemex check: the vault is clean again" : message, recovered ? "info" : level);
   });
 }

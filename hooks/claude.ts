@@ -115,7 +115,9 @@ type CheckEnvelope = {
 // a clean vault, so a session that starts clean says nothing.
 //
 // `check` exits 0 when it finds only warnings, so the envelope decides, not the
-// exit code; see the same function in extensions/pi.ts.
+// exit code; see the same function in extensions/pi.ts. Findings show as one
+// line of counts, so many of them cannot fill the screen; the full list still
+// decides whether they changed.
 async function stop(event: HookEvent): Promise<Output | undefined> {
   if (!event.session_id) return undefined;
   if (!existsSync(vaultRoot())) return undefined;
@@ -128,10 +130,11 @@ async function stop(event: HookEvent): Promise<Output | undefined> {
     envelope = undefined;
   }
 
+  let found = "";
   let message = "";
   if (!envelope) {
     // An exit-0 sweep with no envelope is not a failure: only a refusal is.
-    if (check.code !== 0) message = (check.out || check.err || "mnemex check failed").trimEnd();
+    if (check.code !== 0) message = found = (check.out || check.err || "mnemex check failed").trimEnd();
   } else {
     const errors = envelope.summary?.error ?? 0;
     const warnings = envelope.summary?.warning ?? 0;
@@ -143,13 +146,13 @@ async function stop(event: HookEvent): Promise<Output | undefined> {
           return `${where}: ${d.severity}[${d.code}]: ${d.message}`;
         })
         .join("\n");
-      const trailer = `${errors} error(s), ${warnings} warning(s) in ${envelope.checked ?? 0} note(s)`;
-      message = `mnemex check: ${trailer}\n\n${text}`;
+      message = `mnemex check: ${errors} error(s), ${warnings} warning(s) in ${envelope.checked ?? 0} note(s); run \`mnemex check\` for details`;
+      found = `${message}\n${text}`;
     }
   }
 
   const file = shownFile(event.session_id);
-  const digest = message ? createHash("sha256").update(message).digest("hex") : "";
+  const digest = found ? createHash("sha256").update(found).digest("hex") : "";
   let shown = "";
   try {
     shown = readFileSync(file, "utf8");

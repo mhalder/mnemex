@@ -169,7 +169,8 @@ check reaches the model as a block reason.
 
 Both integrations sweep the whole vault with `check` at the end of every turn,
 not only after a write through the editing tools, so a shell write, an editor,
-or another session is caught too. Findings are shown only when they differ
+or another session is caught too. Findings are shown as one line of counts,
+and `mnemex check` lists them; the line is shown only when the findings differ
 from what that session last showed, and a vault that turns clean says so once.
 Pi keeps the last shown sweep in memory; Claude runs each hook as its own
 process, so it keeps a digest per session under `$XDG_RUNTIME_DIR` (or the
