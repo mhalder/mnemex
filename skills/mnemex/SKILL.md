@@ -10,7 +10,9 @@ scaffolds. `<verb> --help` is the surface. Never restate either, and never grep
 the vault: `mnemex show`, `mnemex list --project`, `mnemex list --tag` (notes
 carrying every given tag), `mnemex project --for`, and `mnemex brief --for`
 answer from outside. `mnemex resolve <id>`
-finds one note by id and prints its path; read the body from there.
+finds one note by id and prints `kind: title`, then its path on the next line;
+`mnemex resolve <id> --json | jq -r .note.path` gives the path alone. Read the
+body from there.
 
 ## Workflow
 
