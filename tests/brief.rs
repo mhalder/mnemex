@@ -449,3 +449,191 @@ fn brief_json_carries_steps_and_body_included() {
     assert_eq!(j["contexts"][0]["body_included"], true);
     assert_eq!(j["budget"]["limit"], brief::DEFAULT_BUDGET);
 }
+
+/// Run `git -C <vault> <args>`, failing the test on a non-zero exit.
+fn git(v: &Vault, args: &[&str]) {
+    let status = std::process::Command::new("git")
+        .arg("-C")
+        .arg(v.root())
+        .args(args)
+        .status()
+        .expect("git");
+    assert!(status.success(), "git {args:?}");
+}
+
+/// `git init` plus the identity a commit needs, or `false` when git is absent
+/// or refuses, so a machine without it skips rather than fails.
+fn git_vault(v: &Vault) -> bool {
+    if std::process::Command::new("git")
+        .arg("--version")
+        .output()
+        .is_err()
+    {
+        eprintln!("skipping: git is not on PATH");
+        return false;
+    }
+    let ok = std::process::Command::new("git")
+        .arg("-C")
+        .arg(v.root())
+        .args(["init", "-q"])
+        .status()
+        .is_ok_and(|s| s.success());
+    if !ok {
+        eprintln!("skipping: git init failed");
+        return false;
+    }
+    git(v, &["config", "user.email", "a@b.c"]);
+    git(v, &["config", "user.name", "fixture"]);
+    true
+}
+
+#[test]
+fn a_git_backed_vault_dates_each_note_by_its_commit_and_orders_memories_newest_first() {
+    let v = Vault::new();
+    let p = owned_project(&v, "");
+    // The ids sort oldest first, so only the commit dates can order them.
+    write_spoke(&v, "memories", "202609081100-a", &p, "", "A", "");
+    write_spoke(&v, "memories", "202609081101-b", &p, "", "B", "");
+    // A ten-character name with a `-` at index 4 is not a date, and git lists
+    // it first, so reading it as one would date every note after it.
+    v.raw("", "abcd-ef.md", "not a date\n");
+    if !git_vault(&v) {
+        return;
+    }
+    git(&v, &["add", "-A"]);
+    git(
+        &v,
+        &[
+            "commit",
+            "-qm",
+            "a",
+            "--date=2020-01-02T00:00:00",
+            "--",
+            "abcd-ef.md",
+            "memories/202609081100-a.md",
+        ],
+    );
+    git(
+        &v,
+        &[
+            "commit",
+            "-qm",
+            "b",
+            "--date=2020-01-05T00:00:00",
+            "--",
+            "memories/202609081101-b.md",
+        ],
+    );
+
+    let b = brief_for(&v, brief::DEFAULT_BUDGET);
+    // The commit date, not the file's mtime, which is today.
+    assert_eq!(
+        b.changed.get("202609081100-a").map(String::as_str),
+        Some("2020-01-02"),
+        "{:?}",
+        b.changed
+    );
+    assert_eq!(
+        b.changed.get("202609081101-b").map(String::as_str),
+        Some("2020-01-05"),
+        "{:?}",
+        b.changed
+    );
+    let ids: Vec<&str> = b.memories.iter().map(|m| m.note.id.as_str()).collect();
+    assert_eq!(ids, ["202609081101-b", "202609081100-a"], "newest first");
+    // The rendered list carries the dates, newest first.
+    let older = b.human.find("202609081100-a").expect("a listed");
+    let newer = b.human.find("202609081101-b").expect("b listed");
+    assert!(newer < older, "{}", b.human);
+}
+
+#[test]
+fn a_vault_that_is_not_a_repository_dates_a_note_by_its_mtime() {
+    let v = Vault::new();
+    let p = owned_project(&v, "");
+    write_spoke(&v, "memories", "202609081100-m", &p, "", "M", "");
+    let b = brief_for(&v, brief::DEFAULT_BUDGET);
+    let changed = b.changed.get("202609081100-m").expect("dated");
+    let b10 = changed.as_bytes();
+    assert_eq!(b10.len(), 10, "{changed}");
+    assert!(
+        b10[4] == b'-'
+            && b10[7] == b'-'
+            && b10
+                .iter()
+                .enumerate()
+                .all(|(i, c)| i == 4 || i == 7 || c.is_ascii_digit()),
+        "{changed}"
+    );
+}
+
+#[test]
+fn the_budget_accounts_for_every_body_it_includes() {
+    let v = Vault::new();
+    let p = owned_project(&v, "");
+    for id in ["202609081100-a", "202609081101-b"] {
+        write_spoke(
+            &v,
+            "contexts",
+            id,
+            &p,
+            "",
+            "C",
+            &format!("{}\n", "x".repeat(2000)),
+        );
+    }
+    // Smaller than the product the budget arithmetic could make of one body,
+    // larger than the two bodies it must fit.
+    let b = brief_for(&v, 5000);
+    let included = b.contexts.iter().filter(|c| c.body_included).count();
+    assert_eq!(included, 2, "{:?}", b.contexts);
+    assert_eq!(
+        b.human.matches(&"x".repeat(2000)).count(),
+        2,
+        "both bodies are rendered"
+    );
+}
+
+#[test]
+fn the_project_body_loses_its_heading_line_and_nothing_else() {
+    let v = Vault::new();
+    v.dir("work/src");
+    v.write(
+        "projects",
+        "202609061846-p",
+        "---\nstatus: active\npath: work\n---\n\n# P\n\n## Purpose\n\nfirst line\n",
+    );
+    let b = brief_for(&v, brief::DEFAULT_BUDGET);
+    // The title line is dropped, and nothing else is: the body keeps both of
+    // its blank lines, so a dropped line shows up as one fewer newline.
+    assert!(!b.human.contains("# P\n"), "{}", b.human);
+    assert!(
+        b.human
+            .contains("no repo\n\n\n\n## Purpose\n\nfirst line\n"),
+        "{}",
+        b.human
+    );
+}
+
+#[test]
+fn the_next_block_is_rendered_when_it_has_lines() {
+    let v = Vault::new();
+    let p = owned_project(&v, "");
+    write_spoke(
+        &v,
+        "plans",
+        "202609070816-x",
+        &p,
+        "status: open\n",
+        "X",
+        "- [ ] a\n",
+    );
+    let b = brief_for(&v, brief::DEFAULT_BUDGET);
+    assert!(b.human.contains("\n## Next\n"), "{}", b.human);
+    assert!(
+        b.human
+            .contains("- read plans/202609070816-x.md before starting: 1 open step\n"),
+        "{}",
+        b.human
+    );
+}
