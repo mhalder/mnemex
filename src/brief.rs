@@ -298,8 +298,9 @@ fn next_lines(plans: &[Spoke]) -> Vec<String> {
         let open = plan.steps.map_or(0, |s| s.open);
         if open > 0 {
             out.push(format!(
-                "read plans/{}.md before starting: {open} open steps",
-                plan.note.id
+                "read plans/{}.md before starting: {open} open {}",
+                plan.note.id,
+                crate::report::plural(open, "step")
             ));
         } else {
             stale += 1;
@@ -350,8 +351,12 @@ fn prefix_text(
     for plan in plans {
         let steps = plan.steps.unwrap_or_default();
         let mut line = format!(
-            "- {} — {} ({} of {} steps open)",
-            plan.note.id, plan.note.title, steps.open, steps.total
+            "- {} — {} ({} of {} {} open)",
+            plan.note.id,
+            plan.note.title,
+            steps.open,
+            steps.total,
+            crate::report::plural(steps.total, "step")
         );
         for r in refs_of(&plan.note) {
             let _ = write!(line, " · {r}");

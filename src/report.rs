@@ -79,7 +79,7 @@ impl Summary {
     }
 }
 
-fn plural(n: usize, word: &str) -> String {
+pub(crate) fn plural(n: usize, word: &str) -> String {
     if n == 1 {
         word.to_owned()
     } else {

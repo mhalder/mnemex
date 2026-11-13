@@ -65,6 +65,9 @@ fn brief_prints_the_project_body_and_grouped_spokes() {
     let human = &b.human;
     assert!(human.contains("# mnemex project: P"), "{human}");
     assert!(human.contains("the purpose"), "{human}");
+    assert!(human.contains("202609061846-p · work · no repo"), "{human}");
+    // The body already ends with a newline, so the section adds exactly one.
+    assert!(human.contains("the purpose\n\n## Open plans"), "{human}");
     assert!(human.contains("## Open plans"), "{human}");
     assert!(
         human.contains("202609070816-x — X (1 of 2 steps open)"),
@@ -103,6 +106,42 @@ fn step_counting_includes_both_checked_forms() {
     let b = brief_for(&v, brief::DEFAULT_BUDGET);
     assert_eq!(b.plans[0].steps.map(|s| (s.open, s.total)), Some((1, 3)));
     assert!(b.human.contains("(1 of 3 steps open)"), "{}", b.human);
+}
+
+#[test]
+fn a_lone_step_is_counted_in_the_singular() {
+    let v = Vault::new();
+    let p = owned_project(&v, "");
+    write_spoke(
+        &v,
+        "plans",
+        "202609070816-x",
+        &p,
+        "status: open\n",
+        "X",
+        "- [ ] the only step\n",
+    );
+    // A plan whose one step is done is still listed: the noun follows the total.
+    write_spoke(
+        &v,
+        "plans",
+        "202609070817-y",
+        &p,
+        "status: open\n",
+        "Y",
+        "- [x] done\n",
+    );
+    let b = brief_for(&v, brief::DEFAULT_BUDGET);
+    let human = &b.human;
+    assert!(human.contains("(1 of 1 step open)"), "{human}");
+    assert!(human.contains("(0 of 1 step open)"), "{human}");
+    assert!(
+        b.next
+            .iter()
+            .any(|n| n.ends_with("before starting: 1 open step")),
+        "{:?}",
+        b.next
+    );
 }
 
 #[test]
