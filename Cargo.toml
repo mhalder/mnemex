@@ -43,3 +43,6 @@ missing_docs = "warn"
 
 [lints.clippy]
 pedantic = { level = "deny", priority = -1 }
+# `assert!(x.is_empty())` reads better than the lint's `assert_eq!(x, [] as [T; 0])`
+# suggestion, so the lint is allowed crate-wide.
+assert_is_empty = "allow"
