@@ -450,6 +450,30 @@ fn brief_json_carries_steps_and_body_included() {
     assert_eq!(j["budget"]["limit"], brief::DEFAULT_BUDGET);
 }
 
+#[test]
+fn brief_json_carries_the_rendered_text_of_the_same_run() {
+    let v = Vault::new();
+    let p = owned_project(&v, "the purpose");
+    write_spoke(
+        &v,
+        "plans",
+        "202609070816-x",
+        &p,
+        "status: open\n",
+        "X",
+        "- [ ] a\n",
+    );
+    let b = brief_for(&v, brief::DEFAULT_BUDGET);
+    let j: serde_json::Value = serde_json::from_str(&brief::json(&b)).expect("json");
+    // One run serves both readers: the text a session injects and the lists a
+    // display shows cannot disagree, as two separate runs could.
+    assert_eq!(j["text"], b.human.as_str());
+    assert!(
+        b.human.contains("the purpose"),
+        "the text is the full brief"
+    );
+}
+
 /// Run `git -C <vault> <args>`, failing the test on a non-zero exit.
 fn git(v: &Vault, args: &[&str]) {
     let status = std::process::Command::new("git")

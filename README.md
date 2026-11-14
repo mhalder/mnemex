@@ -133,6 +133,8 @@ vault size and safe to run from a status line every few hundred milliseconds.
 with their step counts, memories newest first, ADRs, contexts, and a `Next`
 block telling the session which plan to read first and which done plans to
 close. Context bodies are cut to an output budget (default 16384 bytes).
+`--json` carries the same printed text in `text`, beside the lists it was
+rendered from.
 
 ## Using with Pi
 

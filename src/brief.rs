@@ -526,6 +526,9 @@ struct BriefJson<'a> {
     contexts: Vec<ContextJson<'a>>,
     next: Vec<String>,
     budget: Budget,
+    /// The human output of this same run, so a reader that injects the text
+    /// and shows the lists needs one run, not two that can disagree.
+    text: &'a str,
 }
 
 /// The `brief --json` envelope.
@@ -558,5 +561,6 @@ pub fn json(brief: &Brief) -> String {
             .collect(),
         next: brief.next.clone(),
         budget: brief.budget,
+        text: &brief.human,
     })
 }
