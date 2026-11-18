@@ -58,7 +58,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y musl-tools
       - name: Install cross
         if: matrix.command == 'cross'
-        uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2.90.3
+        uses: taiki-e/install-action@4a76afe23f9e08d2d9550fb56e556444e8611d21 # v2.90.4
         with:
           tool: cross
       - name: Add Rust target
