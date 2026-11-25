@@ -22,7 +22,7 @@ path = "src/main.rs"
 clap = { version = "4", features = ["derive"] }
 # `unstable-dynamic` may change between minor releases, so it is pinned exactly.
 clap_complete = { version = "=4.6.11", features = ["unstable-dynamic"] }
-jiff = "0.2"
+jiff = "1.0"
 saphyr = "=0.1.0"
 saphyr-parser = "=0.1.0"
 serde = { version = "1", features = ["derive"] }
