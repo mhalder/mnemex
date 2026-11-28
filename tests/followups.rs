@@ -448,3 +448,27 @@ fn an_indented_line_inside_a_top_level_fence_does_not_continue_an_item() {
         "## Follow-ups\n\n- real\n\n```\n  indented code in a top-level fence\n```\n\n- after\n";
     assert_eq!(texts(&followups::items(body)), ["real", "after"]);
 }
+
+#[test]
+fn a_blank_line_inside_an_indented_block_does_not_end_the_item() {
+    // An empty line inside the item's own fence is part of the block, and an
+    // editor that strips trailing whitespace produces exactly this form.
+    let body = "\
+## Follow-ups
+
+- run:
+
+  ```
+  line1
+
+  line2
+  ```
+
+  then tag.
+- next
+";
+    assert_eq!(
+        texts(&followups::items(body)),
+        ["run: ``` line1 line2 ``` then tag.", "next"]
+    );
+}
