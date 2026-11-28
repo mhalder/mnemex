@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0](https://github.com/mhalder/mnemex/compare/v0.7.0...v0.8.0) - 2026-11-28
+
+### Added
+
+- *(follow-ups)* keep item text multi-line, as written
+- *(follow-ups)* list the follow-ups of a project's closed plans
+
+### Fixed
+
+- *(follow-ups)* never cut a blank line at the item's indent
+- *(follow-ups)* let a blank line inside an item's block pass
+- *(follow-ups)* end an item at a fence marker at column zero
+- *(follow-ups)* keep a fenced block in an item, and count no empty bullet
+- *(deps)* port jiff 1.0's renamed zoned types
+
 ## [0.7.0](https://github.com/mhalder/mnemex/compare/v0.6.2...v0.7.0) - 2026-11-14
 
 ### Added
