@@ -34,10 +34,12 @@ pub struct Item {
 ///
 /// The section runs from a `## Follow-ups` line to the next `## ` line or the
 /// end of the body. A line inside a code fence is never a heading or a bullet,
-/// but it is still an item's continuation when it is indented. An item is a
-/// top-level `- ` bullet plus its following indented lines; a blank line
-/// between them does not end it. Anything else is prose and is ignored, and a
-/// bullet with no text at all is not work, so it is no item.
+/// but an item's own block is text: an indented fence and its lines continue
+/// the item. A fence marker at column zero is a section-level block, so it ends
+/// the item and its lines belong to none. An item is a top-level `- ` bullet
+/// plus its following indented lines; a blank line between them does not end
+/// it. Anything else is prose and is ignored, and a bullet with no text at all
+/// is not work, so it is no item.
 #[must_use]
 pub fn items(body: &str) -> Vec<Item> {
     let mut fences = Fences::default();
@@ -82,12 +84,15 @@ pub fn items(body: &str) -> Vec<Item> {
             }
             continue;
         }
-        if prose && !line.trim().is_empty() {
+        if prose && line.trim().is_empty() {
             // A blank line ends nothing by itself: the next line decides
             // whether the item goes on.
-            close(&mut found, &mut current);
+            continue;
         }
-        // A fence line or a line inside one, at column zero, is ignored.
+        // Any other line that is neither a bullet nor indented ends the item,
+        // a fence marker at column zero included: a section-level block is not
+        // part of a bullet's text.
+        close(&mut found, &mut current);
     }
     close(&mut found, &mut current);
     found

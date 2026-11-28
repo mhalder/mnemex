@@ -439,3 +439,12 @@ fn a_bullet_keeps_an_indented_code_block_in_its_text() {
         ["run this before release: ``` cargo deny check ``` then tag."]
     );
 }
+
+#[test]
+fn an_indented_line_inside_a_top_level_fence_does_not_continue_an_item() {
+    // A fence at column zero is a section-level block: the marker ends the
+    // item, and its lines, indented or not, are nobody's continuation.
+    let body =
+        "## Follow-ups\n\n- real\n\n```\n  indented code in a top-level fence\n```\n\n- after\n";
+    assert_eq!(texts(&followups::items(body)), ["real", "after"]);
+}
