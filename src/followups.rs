@@ -84,9 +84,9 @@ pub fn items(body: &str) -> Vec<Item> {
             }
             continue;
         }
-        if prose && line.trim().is_empty() {
-            // A blank line ends nothing by itself: the next line decides
-            // whether the item goes on.
+        if line.trim().is_empty() {
+            // A blank line ends nothing by itself, fenced or not: the next
+            // line decides whether the item goes on.
             continue;
         }
         // Any other line that is neither a bullet nor indented ends the item,
