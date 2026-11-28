@@ -33,10 +33,11 @@ pub struct Item {
 /// The follow-up items of a plan body.
 ///
 /// The section runs from a `## Follow-ups` line to the next `## ` line or the
-/// end of the body. A line inside a code fence is neither a heading nor a
-/// bullet. An item is a top-level `- ` bullet plus its following indented
-/// lines; a blank line between them does not end it. Anything else is prose and
-/// is ignored, so a section that says `None.` has no items.
+/// end of the body. A line inside a code fence is never a heading or a bullet,
+/// but it is still an item's continuation when it is indented. An item is a
+/// top-level `- ` bullet plus its following indented lines; a blank line
+/// between them does not end it. Anything else is prose and is ignored, and a
+/// bullet with no text at all is not work, so it is no item.
 #[must_use]
 pub fn items(body: &str) -> Vec<Item> {
     let mut fences = Fences::default();
@@ -44,27 +45,31 @@ pub fn items(body: &str) -> Vec<Item> {
     let mut current: Option<String> = None;
     let mut in_section = false;
     for line in body.lines() {
-        if !fences.is_prose(line) {
-            continue;
-        }
-        if line.trim_end() == HEADING {
-            if in_section {
+        let prose = fences.is_prose(line);
+        if prose {
+            if line.trim_end() == HEADING {
+                if in_section {
+                    break;
+                }
+                in_section = true;
+                continue;
+            }
+            if !in_section {
+                continue;
+            }
+            if line.starts_with("## ") {
                 break;
             }
-            in_section = true;
+            if let Some(text) = line.strip_prefix("- ") {
+                close(&mut found, &mut current);
+                current = Some(text.trim().to_owned());
+                continue;
+            }
+        } else if !in_section {
             continue;
         }
-        if !in_section {
-            continue;
-        }
-        if line.starts_with("## ") {
-            break;
-        }
-        if let Some(text) = line.strip_prefix("- ") {
-            close(&mut found, &mut current);
-            current = Some(text.trim().to_owned());
-            continue;
-        }
+        // Indentation alone decides a continuation, a fenced block's lines
+        // included: only structure has to respect the fence.
         if line.starts_with([' ', '\t']) {
             let continuation = line.trim();
             if let Some(text) = &mut current
@@ -77,12 +82,12 @@ pub fn items(body: &str) -> Vec<Item> {
             }
             continue;
         }
-        if line.trim().is_empty() {
+        if prose && !line.trim().is_empty() {
             // A blank line ends nothing by itself: the next line decides
             // whether the item goes on.
-            continue;
+            close(&mut found, &mut current);
         }
-        close(&mut found, &mut current);
+        // A fence line or a line inside one, at column zero, is ignored.
     }
     close(&mut found, &mut current);
     found
@@ -90,7 +95,9 @@ pub fn items(body: &str) -> Vec<Item> {
 
 /// Finish the item under construction, numbering it by its position.
 fn close(found: &mut Vec<Item>, current: &mut Option<String>) {
-    if let Some(text) = current.take() {
+    if let Some(text) = current.take()
+        && !text.is_empty()
+    {
         found.push(Item {
             n: found.len() + 1,
             text,
