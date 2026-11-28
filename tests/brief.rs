@@ -787,3 +787,26 @@ fn brief_json_carries_the_follow_up_counts_zeros_included() {
     assert_eq!(j["follow_ups"]["items"], 0);
     assert_eq!(j["follow_ups"]["plans"], 0);
 }
+
+#[test]
+fn a_multi_byte_blank_line_in_a_follow_up_does_not_break_the_brief() {
+    // The brief counts follow-ups at every session start, so a line the
+    // follow-up reader cannot cut must still leave a brief.
+    let v = Vault::new();
+    let p = owned_project(&v, "");
+    write_spoke(
+        &v,
+        "plans",
+        "202609070817-done",
+        &p,
+        "status: done\n",
+        "Done",
+        "## Follow-ups\n\n- first\n  more\n \u{a0}\n  last\n",
+    );
+    let b = brief_for(&v, brief::DEFAULT_BUDGET);
+    assert!(
+        b.human.contains("Follow-ups: 1 in 1 closed plan.\n"),
+        "{}",
+        b.human
+    );
+}

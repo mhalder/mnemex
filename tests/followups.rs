@@ -550,3 +550,25 @@ fn the_envelope_carries_multi_line_text_as_written() {
         "run:\n\n```\ncargo deny check\n```\n\nthen tag."
     );
 }
+
+#[test]
+fn a_blank_line_of_multi_byte_whitespace_inside_an_item_reads_as_empty() {
+    // `trim` counts NBSP and the ideographic space as whitespace, so these
+    // lines are blank; they must not be cut at the ASCII indent, which lands
+    // inside the character.
+    for blank in [" \u{a0}", "\u{a0}", "\u{3000}", "  \u{3000}"] {
+        let body = format!("## Follow-ups\n\n- first\n  more\n{blank}\n  last\n");
+        assert_eq!(
+            texts(&followups::items(&body)),
+            ["first\nmore\n\nlast"],
+            "{blank:?}"
+        );
+    }
+    // One-column indent, where a two-byte NBSP is enough to split.
+    assert_eq!(
+        texts(&followups::items(
+            "## Follow-ups\n\n- first\n more\n\u{a0}\n last\n"
+        )),
+        ["first\nmore\n\nlast"]
+    );
+}
