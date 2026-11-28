@@ -406,3 +406,36 @@ fn plans_are_separated_by_one_blank_line() {
         "202609070816-a — 202609070816-a\n  1. a\n\n202609070817-b — 202609070817-b\n  1. b\n"
     );
 }
+
+#[test]
+fn a_bullet_with_no_text_is_not_an_item() {
+    // `- ` and `-` are the same nothing: neither carries work, and both must
+    // read the same way.
+    assert_eq!(
+        texts(&followups::items("## Follow-ups\n\n- \n- real\n")),
+        ["real"]
+    );
+    assert_eq!(
+        texts(&followups::items("## Follow-ups\n\n-\n- real\n")),
+        ["real"]
+    );
+}
+
+#[test]
+fn a_bullet_keeps_an_indented_code_block_in_its_text() {
+    let body = "\
+## Follow-ups
+
+- run this before release:
+
+  ```
+  cargo deny check
+  ```
+
+  then tag.
+";
+    assert_eq!(
+        texts(&followups::items(body)),
+        ["run this before release: ``` cargo deny check ``` then tag."]
+    );
+}
