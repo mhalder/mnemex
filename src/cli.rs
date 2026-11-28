@@ -180,6 +180,18 @@ pub enum Command {
         #[arg(long)]
         json: bool,
     },
+    /// List the follow-ups a project's closed plans carry.
+    FollowUps {
+        /// The directory whose project to ask about. Defaults to the working directory.
+        #[arg(long = "for", value_name = "DIR", value_hint = ValueHint::DirPath, conflicts_with = "project")]
+        for_: Option<PathBuf>,
+        /// The project's id.
+        #[arg(long, value_name = "PROJECT", add = ArgValueCompleter::new(complete::project))]
+        project: Option<String>,
+        /// Emit the versioned envelope.
+        #[arg(long)]
+        json: bool,
+    },
     /// Print an embedded hook, or install or check the installed one.
     Extension {
         /// Which agent's hook: Pi's extension or Claude Code's hook.

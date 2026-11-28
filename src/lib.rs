@@ -13,6 +13,7 @@ pub mod cli;
 pub mod complete;
 pub mod diagnostic;
 pub mod error;
+pub mod followups;
 pub mod frontmatter;
 pub mod git;
 pub mod hook;

@@ -36,9 +36,14 @@ A replaced ADR is set `deprecated`; the replacing ADR links it in its Context.
 
 A plan is one task a few sessions can close, usually one change or merge
 request. Work beyond its goal is a plain bullet under the follow-ups
-heading, never a box, since the scaffold's box is a step; mint it as its own
-plan only when its work starts. Close a plan once its goal is met, follow-ups
-and all; a plan that cannot close is too big, so split it.
+heading, never a box, since the scaffold's box is a step. A bullet opens
+with a short imperative summary and holds that work alone: no history, no
+scope fence (Goal or the body owns it), no pending step toward the goal. Mint
+it as its own plan only when its work starts, then delete the bullet — the
+new plan links where it came from — and delete one that is dropped. Close a
+plan once its goal is met, follow-ups and all; a plan that cannot close is
+too big, so split it. `mnemex follow-ups` lists a project's closed-plan
+bullets.
 
 ## Conventions
 

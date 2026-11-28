@@ -661,3 +661,129 @@ fn the_next_block_is_rendered_when_it_has_lines() {
         b.human
     );
 }
+
+#[test]
+fn the_follow_up_count_closes_the_open_plans_section() {
+    let v = Vault::new();
+    let p = owned_project(&v, "");
+    write_spoke(
+        &v,
+        "plans",
+        "202609070817-done",
+        &p,
+        "status: done\n",
+        "Done",
+        "## Follow-ups\n\n- one\n- two\n",
+    );
+    write_spoke(
+        &v,
+        "plans",
+        "202609070818-also",
+        &p,
+        "status: done\n",
+        "Also",
+        "## Follow-ups\n\n- three\n",
+    );
+    // An open plan's bullets are not counted: they are seen when it is read.
+    write_spoke(
+        &v,
+        "plans",
+        "202609070816-open",
+        &p,
+        "status: open\n",
+        "Open",
+        "## Follow-ups\n\n- not counted\n",
+    );
+    // Nor does a closed plan with no item add to the plan count.
+    write_spoke(
+        &v,
+        "plans",
+        "202609070819-empty",
+        &p,
+        "status: done\n",
+        "Empty",
+        "## Follow-ups\n\nNone.\n",
+    );
+    let b = brief_for(&v, brief::DEFAULT_BUDGET);
+    let human = &b.human;
+    assert!(
+        human.contains("Follow-ups: 3 in 2 closed plans.\n"),
+        "{human}"
+    );
+    let open = human.find("202609070816-open").expect("the open plan");
+    let count = human.find("Follow-ups:").expect("the count line");
+    let memories = human.find("## Memories").expect("the memories section");
+    assert!(open < count && count < memories, "{human}");
+    // Only the count is in the brief: no closed plan is named and no item is
+    // injected into the session.
+    assert!(!human.contains("202609070817-done"), "{human}");
+    assert!(!human.contains("not counted"), "{human}");
+}
+
+#[test]
+fn the_follow_up_line_is_absent_when_no_closed_plan_has_an_item() {
+    let v = Vault::new();
+    let p = owned_project(&v, "");
+    write_spoke(
+        &v,
+        "plans",
+        "202609070817-done",
+        &p,
+        "status: done\n",
+        "Done",
+        "## Follow-ups\n\nNone.\n",
+    );
+    let b = brief_for(&v, brief::DEFAULT_BUDGET);
+    assert!(!b.human.contains("Follow-ups:"), "{}", b.human);
+}
+
+#[test]
+fn the_follow_up_line_is_counted_in_the_worst_case_budget() {
+    let v = Vault::new();
+    let p = owned_project(&v, "");
+    write_spoke(
+        &v,
+        "plans",
+        "202609070817-done",
+        &p,
+        "status: done\n",
+        "Done",
+        "## Follow-ups\n\n- one\n- two\n",
+    );
+    // The line belongs to the always-emitted prefix, so a budget that fits no
+    // context body still pays for it in `used`.
+    let b = brief_for(&v, 0);
+    assert!(
+        b.human.contains("Follow-ups: 2 in 1 closed plan.\n"),
+        "{}",
+        b.human
+    );
+    assert_eq!(b.budget.used, b.human.len());
+}
+
+#[test]
+fn brief_json_carries_the_follow_up_counts_zeros_included() {
+    let v = Vault::new();
+    let p = owned_project(&v, "");
+    write_spoke(
+        &v,
+        "plans",
+        "202609070817-done",
+        &p,
+        "status: done\n",
+        "Done",
+        "## Follow-ups\n\n- one\n- two\n",
+    );
+    let b = brief_for(&v, brief::DEFAULT_BUDGET);
+    let j: serde_json::Value = serde_json::from_str(&brief::json(&b)).expect("json");
+    assert_eq!(j["follow_ups"]["items"], 2);
+    assert_eq!(j["follow_ups"]["plans"], 1);
+
+    // Every outcome is in the envelope, so no follow-ups renders as zeros.
+    let empty = Vault::new();
+    let _p = owned_project(&empty, "");
+    let b = brief_for(&empty, brief::DEFAULT_BUDGET);
+    let j: serde_json::Value = serde_json::from_str(&brief::json(&b)).expect("json");
+    assert_eq!(j["follow_ups"]["items"], 0);
+    assert_eq!(j["follow_ups"]["plans"], 0);
+}

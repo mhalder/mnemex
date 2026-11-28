@@ -16,6 +16,7 @@ use mnemex::brief;
 use mnemex::check::{self, Env};
 use mnemex::cli::{Cli, Command, CompletionShell, ExtensionTarget};
 use mnemex::error::Error;
+use mnemex::followups;
 use mnemex::kind::Kind;
 use mnemex::query::{self, ProjectAnswer};
 use mnemex::report::{self, Summary};
@@ -167,6 +168,16 @@ fn run(command: &Command) -> Result<u8, Error> {
                 *json,
             )
         }
+        Command::FollowUps {
+            for_,
+            project,
+            json,
+        } => follow_ups_command(
+            &existing_vault()?,
+            for_.as_deref(),
+            project.as_deref(),
+            *json,
+        ),
         Command::Extension {
             target,
             install,
@@ -478,12 +489,54 @@ fn brief_command(root: &Path, dir: &Path, budget: usize, json: bool) -> Result<u
             print(&output);
             Ok(OK)
         }
-        Err(Error::NoProjectForBrief(message)) => {
+        Err(Error::NoProjectOwns(message)) => {
             let _ = writeln!(std::io::stderr(), "{message}");
             Ok(FOUND_PROBLEMS)
         }
         Err(e) => Err(e),
     }
+}
+
+/// The follow-ups of a project's closed plans. A project with none exits 1, and
+/// a refusal exits 2.
+fn follow_ups_command(
+    root: &Path,
+    dir: Option<&Path>,
+    project: Option<&str>,
+    json: bool,
+) -> Result<u8, Error> {
+    let project = match project {
+        Some(id) => followups::project_note(root, id)?,
+        // A directory no project owns answers as `brief` does: the question was
+        // asked, and nothing found is an answer, not a refusal.
+        None => match brief::project_at(
+            root,
+            &dir.map_or_else(cwd, |d| Ok(d.to_path_buf()))?,
+            home().as_deref(),
+        ) {
+            Ok(project) => project,
+            Err(e @ Error::NoProjectOwns(_)) => {
+                let _ = writeln!(std::io::stderr(), "{e}");
+                return Ok(FOUND_PROBLEMS);
+            }
+            Err(e) => return Err(e),
+        },
+    };
+    let answer = followups::run(root, &project)?;
+    print(&if json {
+        report::follow_ups_json(&answer)
+    } else {
+        report::follow_ups_human(&answer)
+    });
+    if answer.plans.is_empty() {
+        let _ = writeln!(
+            std::io::stderr(),
+            "no follow-ups in the closed plans of {}",
+            project.id
+        );
+        return Ok(FOUND_PROBLEMS);
+    }
+    Ok(OK)
 }
 
 /// What `--install` or `--check` was asked to do to a file.

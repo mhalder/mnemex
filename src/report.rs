@@ -3,6 +3,11 @@
 //! One version constant is shared by every `--json` envelope, and every outcome
 //! is in the envelope — including the absences — so a consumer reads the payload
 //! rather than inferring from an exit code.
+//!
+//! An added field keeps the version: consumers read the fields they know and
+//! ignore the rest. A removal, a rename, or a change of a field's meaning bumps
+//! it, because the constant is shared and a consumer cannot otherwise tell which
+//! envelope it holds.
 
 use core::fmt::Write as _;
 
@@ -204,6 +209,7 @@ pub fn check_json(diagnostics: &[Diagnostic], checked: usize) -> String {
 use std::path::Path;
 
 use crate::authoring::Outcome;
+use crate::followups::{Answer as FollowUpsAnswer, Item};
 use crate::query::{NoteObject, ProjectAnswer, ShowAnswer};
 
 /// A path as a target line prints it: vault-relative where it can be.
@@ -442,5 +448,65 @@ pub fn show_json(a: &ShowAnswer) -> String {
             memories: a.spokes.memories.iter().map(Into::into).collect(),
             contexts: a.spokes.contexts.iter().map(Into::into).collect(),
         },
+    })
+}
+
+/// `follow-ups`, human: each closed plan, then its items in full.
+#[must_use]
+pub fn follow_ups_human(a: &FollowUpsAnswer) -> String {
+    let mut out = String::new();
+    for (i, plan) in a.plans.iter().enumerate() {
+        if i > 0 {
+            out.push('\n');
+        }
+        let _ = writeln!(out, "{} — {}", plan.note.id, plan.note.title);
+        for item in &plan.items {
+            let _ = writeln!(out, "  {}. {}", item.n, item.text);
+        }
+    }
+    out
+}
+
+#[derive(Serialize)]
+struct ItemJson<'a> {
+    n: usize,
+    text: &'a str,
+}
+
+#[derive(Serialize)]
+struct FollowUpPlanJson<'a> {
+    #[serde(flatten)]
+    note: NoteJson<'a>,
+    follow_ups: Vec<ItemJson<'a>>,
+}
+
+#[derive(Serialize)]
+struct FollowUpsJson<'a> {
+    version: u32,
+    project: NoteJson<'a>,
+    plans: Vec<FollowUpPlanJson<'a>>,
+}
+
+fn item_json(item: &Item) -> ItemJson<'_> {
+    ItemJson {
+        n: item.n,
+        text: &item.text,
+    }
+}
+
+/// `follow-ups --json`.
+#[must_use]
+pub fn follow_ups_json(a: &FollowUpsAnswer) -> String {
+    envelope(&FollowUpsJson {
+        version: VERSION,
+        project: (&a.project).into(),
+        plans: a
+            .plans
+            .iter()
+            .map(|plan| FollowUpPlanJson {
+                note: (&plan.note).into(),
+                follow_ups: plan.items.iter().map(item_json).collect(),
+            })
+            .collect(),
     })
 }
