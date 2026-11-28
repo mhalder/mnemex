@@ -127,13 +127,17 @@ fn item_text(lines: &[&str]) -> String {
         .min()
         .unwrap_or(0);
     let mut out: Vec<&str> = vec![first];
+    // A blank line is empty by definition, never cut: `trim` also strips
+    // multi-byte whitespace such as NBSP, which the ASCII indent above does not
+    // count, so cutting one at `indent` can land inside a character. A
+    // non-blank line starts with at least `indent` ASCII bytes of indentation,
+    // so its cut is always on a character boundary.
     out.extend(rest.iter().map(|line| {
-        let dedented = if line.len() >= indent {
-            &line[indent..]
-        } else {
+        if line.trim().is_empty() {
             ""
-        };
-        dedented.trim_end()
+        } else {
+            line.get(indent..).unwrap_or_default().trim_end()
+        }
     }));
     let first_kept = out.iter().position(|line| !line.is_empty());
     let last_kept = out.iter().rposition(|line| !line.is_empty());
