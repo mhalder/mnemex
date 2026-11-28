@@ -26,87 +26,120 @@ pub struct Item {
     /// Its 1-based position in the section, for display only: it is not a
     /// stable address.
     pub n: usize,
-    /// Its text: the bullet and its continuation lines, joined into one line.
+    /// Its text, as written: newline-separated, dedented, without the bullet
+    /// marker and without end blank lines.
     pub text: String,
 }
 
 /// The follow-up items of a plan body.
 ///
-/// The section runs from a `## Follow-ups` line to the next `## ` line or the
-/// end of the body. A line inside a code fence is never a heading or a bullet,
-/// but an item's own block is text: an indented fence and its lines continue
-/// the item. A fence marker at column zero is a section-level block, so it ends
-/// the item and its lines belong to none. An item is a top-level `- ` bullet
-/// plus its following indented lines; a blank line between them does not end
-/// it. Anything else is prose and is ignored, and a bullet with no text at all
-/// is not work, so it is no item.
+/// The section runs from a prose `## Follow-ups` line to the next prose `## `
+/// line or the end of the body. An item starts at a prose line at column zero
+/// that is `-` alone or begins `- `. It ends at the next item, the end of the
+/// section, or any other non-blank line at column zero, whether that line is
+/// prose, a fence marker, or a line inside a fence. A blank line never ends an
+/// item.
+///
+/// Every line from the bullet to the item's end is its text, kept as written:
+/// the bullet marker comes off the first line, the further lines lose only the
+/// indentation they share, and trailing whitespace is trimmed. Blank lines
+/// inside the text stay; leading and trailing ones go. An item whose text is
+/// empty is no item.
 #[must_use]
 pub fn items(body: &str) -> Vec<Item> {
     let mut fences = Fences::default();
     let mut found = vec![];
-    let mut current: Option<String> = None;
+    let mut current: Option<Vec<&str>> = None;
     let mut in_section = false;
     for line in body.lines() {
+        // Fences decide what can be a heading or a bullet, never what goes
+        // into an item's text.
         let prose = fences.is_prose(line);
-        if prose {
-            if line.trim_end() == HEADING {
-                if in_section {
-                    break;
-                }
-                in_section = true;
-                continue;
-            }
-            if !in_section {
-                continue;
-            }
-            if line.starts_with("## ") {
+        if prose && line.trim_end() == HEADING {
+            if in_section {
                 break;
             }
-            if let Some(text) = line.strip_prefix("- ") {
-                close(&mut found, &mut current);
-                current = Some(text.trim().to_owned());
-                continue;
-            }
-        } else if !in_section {
+            in_section = true;
             continue;
         }
-        // Indentation alone decides a continuation, a fenced block's lines
-        // included: only structure has to respect the fence.
-        if line.starts_with([' ', '\t']) {
-            let continuation = line.trim();
-            if let Some(text) = &mut current
-                && !continuation.is_empty()
-            {
-                if !text.is_empty() {
-                    text.push(' ');
-                }
-                text.push_str(continuation);
-            }
+        if !in_section {
             continue;
         }
-        if line.trim().is_empty() {
-            // A blank line ends nothing by itself, fenced or not: the next
-            // line decides whether the item goes on.
+        if prose && line.starts_with("## ") {
+            break;
+        }
+        if prose && is_bullet(line) {
+            close(&mut found, &mut current);
+            current = Some(vec![line]);
             continue;
         }
-        // Any other line that is neither a bullet nor indented ends the item,
-        // a fence marker at column zero included: a section-level block is not
-        // part of a bullet's text.
-        close(&mut found, &mut current);
+        if !line.trim().is_empty() && !line.starts_with([' ', '\t']) {
+            // Whatever it is, a non-blank line at column zero ends the item.
+            close(&mut found, &mut current);
+            continue;
+        }
+        // A blank line ends nothing, and an indented line is the item's own.
+        if let Some(lines) = &mut current {
+            lines.push(line);
+        }
     }
     close(&mut found, &mut current);
     found
 }
 
+/// Whether a prose line starts a bullet: `-` alone or `- `.
+fn is_bullet(line: &str) -> bool {
+    line == "-" || line.starts_with("- ")
+}
+
 /// Finish the item under construction, numbering it by its position.
-fn close(found: &mut Vec<Item>, current: &mut Option<String>) {
-    if let Some(text) = current.take()
-        && !text.is_empty()
-    {
+fn close(found: &mut Vec<Item>, current: &mut Option<Vec<&str>>) {
+    let Some(lines) = current.take() else {
+        return;
+    };
+    let text = item_text(&lines);
+    if !text.is_empty() {
         found.push(Item {
             n: found.len() + 1,
             text,
         });
+    }
+}
+
+/// A bullet's lines as text: the marker off the first line, the rest dedented
+/// by the indentation they share, trailing whitespace trimmed, end blank lines
+/// dropped, joined with newlines.
+fn item_text(lines: &[&str]) -> String {
+    let Some((first, rest)) = lines.split_first() else {
+        return String::new();
+    };
+    let first = first
+        .strip_prefix("- ")
+        .or_else(|| first.strip_prefix('-'))
+        .unwrap_or_default()
+        .trim_end();
+    // Every further line is blank or indented: anything else at column zero
+    // ended the item.
+    let indent = rest
+        .iter()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| line.len() - line.trim_start_matches([' ', '\t']).len())
+        .min()
+        .unwrap_or(0);
+    let mut out: Vec<&str> = vec![first];
+    out.extend(rest.iter().map(|line| {
+        let dedented = if line.len() >= indent {
+            &line[indent..]
+        } else {
+            ""
+        };
+        dedented.trim_end()
+    }));
+    let first_kept = out.iter().position(|line| !line.is_empty());
+    let last_kept = out.iter().rposition(|line| !line.is_empty());
+    match (first_kept, last_kept) {
+        (Some(start), Some(end)) => out[start..=end].join("\n"),
+        _ => String::new(),
     }
 }
 

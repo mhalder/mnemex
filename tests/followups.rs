@@ -42,16 +42,16 @@ fn a_bullet_carries_its_indented_continuation_lines() {
     let body = "# P\n\n## Follow-ups\n\n- the first bullet\n  wraps onto a second line\n- second\n";
     assert_eq!(
         texts(&followups::items(body)),
-        ["the first bullet wraps onto a second line", "second"]
+        ["the first bullet\nwraps onto a second line", "second"]
     );
 }
 
 #[test]
-fn a_blank_line_inside_an_item_continues_it_when_the_next_line_is_indented() {
+fn a_blank_line_inside_an_item_continues_it_and_stays_in_the_text() {
     let body = "## Follow-ups\n\n- first\n\n  more of it\n- second\n";
     assert_eq!(
         texts(&followups::items(body)),
-        ["first more of it", "second"]
+        ["first\n\nmore of it", "second"]
     );
 }
 
@@ -81,7 +81,7 @@ fn the_section_ends_at_the_next_heading() {
 #[test]
 fn the_section_runs_to_the_end_of_the_body() {
     let body = "## Follow-ups\n\n- last\n  continued\n";
-    assert_eq!(texts(&followups::items(body)), ["last continued"]);
+    assert_eq!(texts(&followups::items(body)), ["last\ncontinued"]);
 }
 
 #[test]
@@ -109,6 +109,35 @@ fn a_heading_or_a_bullet_inside_a_fence_is_neither() {
 fn an_unindented_prose_line_ends_the_item_it_follows() {
     let body = "## Follow-ups\n\n- first\nprose between\n  ignored continuation\n- second\n";
     assert_eq!(texts(&followups::items(body)), ["first", "second"]);
+}
+
+#[test]
+fn a_column_zero_line_inside_a_fence_ends_the_item() {
+    // The fence marker at column zero ends the item; the indented lines after
+    // it belong to no item, though they sit inside a fence.
+    let body = "## Follow-ups\n\n- real\n\n  kept\n\n```\n  inside a fence\n```\n\n  dropped\n";
+    assert_eq!(texts(&followups::items(body)), ["real\n\nkept"]);
+}
+
+#[test]
+fn continuation_lines_lose_only_the_indentation_they_share() {
+    let body = "## Follow-ups\n\n- outer\n  - nested\n    deeper\n";
+    assert_eq!(
+        texts(&followups::items(body)),
+        ["outer\n- nested\n  deeper"]
+    );
+}
+
+#[test]
+fn trailing_whitespace_is_trimmed_and_end_blank_lines_dropped() {
+    let body = "## Follow-ups\n\n- first   \n  second\t\n\n  \n- next\n";
+    assert_eq!(texts(&followups::items(body)), ["first\nsecond", "next"]);
+}
+
+#[test]
+fn leading_blank_lines_are_dropped() {
+    let body = "## Follow-ups\n\n- \n\n  real\n";
+    assert_eq!(texts(&followups::items(body)), ["real"]);
 }
 
 #[test]
@@ -314,7 +343,36 @@ fn the_verb_prints_every_item_in_full() {
         out.contains("  1. `cargo deny` and advisory checks\n"),
         "{out}"
     );
-    assert!(out.contains("  2. a second bullet that wraps\n"), "{out}");
+    assert!(
+        out.contains("  2. a second bullet\n     that wraps\n"),
+        "{out}"
+    );
+}
+
+#[test]
+fn the_verb_indents_every_further_line_by_its_items_prefix() {
+    let v = Vault::new();
+    let p = owned_project(&v);
+    plan(
+        &v,
+        "202609070817-done",
+        &p,
+        "done",
+        "## Follow-ups\n\n- Pass the commit SHA into the image build:\n\n  ```\n  podman build --build-arg GIT_SHA=$(git rev-parse HEAD) .\n  ```\n",
+    );
+    let (code, out, _) = run(mnemex(&v).args(["follow-ups", "--project", &p]));
+    assert_eq!(code, 0, "{out}");
+    assert_eq!(
+        out,
+        concat!(
+            "202609070817-done — 202609070817-done\n",
+            "  1. Pass the commit SHA into the image build:\n",
+            "\n",
+            "     ```\n",
+            "     podman build --build-arg GIT_SHA=$(git rev-parse HEAD) .\n",
+            "     ```\n",
+        )
+    );
 }
 
 #[test]
@@ -436,7 +494,7 @@ fn a_bullet_keeps_an_indented_code_block_in_its_text() {
 ";
     assert_eq!(
         texts(&followups::items(body)),
-        ["run this before release: ``` cargo deny check ``` then tag."]
+        ["run this before release:\n\n```\ncargo deny check\n```\n\nthen tag."]
     );
 }
 
@@ -469,6 +527,26 @@ fn a_blank_line_inside_an_indented_block_does_not_end_the_item() {
 ";
     assert_eq!(
         texts(&followups::items(body)),
-        ["run: ``` line1 line2 ``` then tag.", "next"]
+        ["run:\n\n```\nline1\n\nline2\n```\n\nthen tag.", "next"]
+    );
+}
+
+#[test]
+fn the_envelope_carries_multi_line_text_as_written() {
+    let v = Vault::new();
+    let p = owned_project(&v);
+    plan(
+        &v,
+        "202609070817-done",
+        &p,
+        "done",
+        "## Follow-ups\n\n- run:\n\n  ```\n  cargo deny check\n  ```\n\n  then tag.\n",
+    );
+    let (code, out, _) = run(mnemex(&v).args(["follow-ups", "--project", &p, "--json"]));
+    assert_eq!(code, 0, "{out}");
+    let j: serde_json::Value = serde_json::from_str(&out).expect("json");
+    assert_eq!(
+        j["plans"][0]["follow_ups"][0]["text"],
+        "run:\n\n```\ncargo deny check\n```\n\nthen tag."
     );
 }

@@ -461,7 +461,17 @@ pub fn follow_ups_human(a: &FollowUpsAnswer) -> String {
         }
         let _ = writeln!(out, "{} — {}", plan.note.id, plan.note.title);
         for item in &plan.items {
-            let _ = writeln!(out, "  {}. {}", item.n, item.text);
+            let prefix = format!("  {}. ", item.n);
+            let pad = " ".repeat(prefix.len());
+            for (j, line) in item.text.lines().enumerate() {
+                if j == 0 {
+                    let _ = writeln!(out, "{prefix}{line}");
+                } else if line.is_empty() {
+                    out.push('\n');
+                } else {
+                    let _ = writeln!(out, "{pad}{line}");
+                }
+            }
         }
     }
     out
