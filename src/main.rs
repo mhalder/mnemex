@@ -125,7 +125,9 @@ fn existing_vault() -> Result<PathBuf, Error> {
 
 /// The `YYYYMMDDHHMM` local-time stamp a new id starts with.
 fn clock() -> String {
-    jiff::Zoned::now().strftime("%Y%m%d%H%M").to_string()
+    jiff::ZonedDateTime::now()
+        .strftime("%Y%m%d%H%M")
+        .to_string()
 }
 
 fn run(command: &Command) -> Result<u8, Error> {

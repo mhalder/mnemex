@@ -489,7 +489,7 @@ fn is_short_date(s: &str) -> bool {
 fn mtime_date(path: &Path) -> Option<String> {
     let modified = std::fs::metadata(path).ok()?.modified().ok()?;
     let timestamp = jiff::Timestamp::try_from(modified).ok()?;
-    let zoned = timestamp.to_zoned(jiff::tz::TimeZone::system());
+    let zoned = timestamp.to_zoned_datetime(jiff::tz::TimeZone::system());
     Some(zoned.strftime("%Y-%m-%d").to_string())
 }
 
