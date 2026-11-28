@@ -1,0 +1,13 @@
+---
+source: tests/surface_snapshots.rs
+expression: "help(&[verb])"
+---
+List the follow-ups a project's closed plans carry
+
+Usage: mnemex follow-ups [OPTIONS]
+
+Options:
+      --for <DIR>          The directory whose project to ask about. Defaults to the working directory
+      --project <PROJECT>  The project's id
+      --json               Emit the versioned envelope
+  -h, --help               Print help

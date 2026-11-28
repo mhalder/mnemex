@@ -42,6 +42,7 @@ fn every_verbs_help() {
         "project",
         "show",
         "brief",
+        "follow-ups",
         "extension",
         "completion",
     ] {

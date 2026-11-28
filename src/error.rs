@@ -196,9 +196,10 @@ pub enum Error {
         /// The spokes naming it.
         spokes: Vec<String>,
     },
-    /// `brief` was asked about a directory no single project owns.
+    /// A project-scoped verb was asked about a directory no single project
+    /// owns.
     #[error("{0}")]
-    NoProjectForBrief(String),
+    NoProjectOwns(String),
     /// The filesystem said no.
     #[error("{path}: {source}")]
     Io {

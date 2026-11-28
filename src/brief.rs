@@ -35,6 +35,18 @@ pub struct Steps {
     pub total: usize,
 }
 
+/// Follow-ups across a project's closed plans.
+///
+/// The brief carries this count and nothing else: a closed plan's item text is
+/// read on demand with `follow-ups`, never injected into a session.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize)]
+pub struct FollowUps {
+    /// Every bullet of every closed plan.
+    pub items: usize,
+    /// Closed plans carrying at least one.
+    pub plans: usize,
+}
+
 /// One spoke of the project, read for the brief.
 #[derive(Clone, Debug)]
 pub struct Spoke {
@@ -69,6 +81,8 @@ pub struct Brief {
     pub contexts: Vec<Spoke>,
     /// The `Next` block.
     pub next: Vec<String>,
+    /// Follow-ups across the closed plans.
+    pub follow_ups: FollowUps,
     /// The budget and what was used.
     pub budget: Budget,
     /// The rendered human output.
@@ -83,6 +97,15 @@ pub const DEFAULT_BUDGET: usize = 16384;
 /// # Errors
 /// Reports a vault that cannot be read, or a directory no project owns.
 pub fn run(root: &Path, dir: &Path, home: Option<&Path>, budget: usize) -> Result<Brief> {
+    let project = project_at(root, dir, home)?;
+    build(root, project, budget)
+}
+
+/// The project that owns `dir`, refusing as every project-scoped verb does.
+///
+/// # Errors
+/// Reports a vault that cannot be read, or a directory no project owns.
+pub fn project_at(root: &Path, dir: &Path, home: Option<&Path>) -> Result<NoteObject> {
     let answer = crate::query::project(root, dir, home)?;
     let Some(project) = answer.note else {
         let message = answer
@@ -99,9 +122,9 @@ pub fn run(root: &Path, dir: &Path, home: Option<&Path>, budget: usize) -> Resul
                 })
             })
             .unwrap_or_else(|| format!("no project owns `{}`", dir.display()));
-        return Err(Error::NoProjectForBrief(message));
+        return Err(Error::NoProjectOwns(message));
     };
-    build(root, project, budget)
+    Ok(project)
 }
 
 /// Build the brief from an already-resolved project.
@@ -170,6 +193,7 @@ fn build(root: &Path, project: NoteObject, budget: usize) -> Result<Brief> {
     sort_newest(&mut contexts);
 
     let next = next_lines(&plans);
+    let follow_ups = count_follow_ups(&spokes);
 
     let changed: BTreeMap<String, String> = spokes
         .iter()
@@ -177,7 +201,14 @@ fn build(root: &Path, project: NoteObject, budget: usize) -> Result<Brief> {
         .collect();
 
     // Decide which context bodies fit, newest first, then render once.
-    let prefix = prefix_text(&project, &project_body, &plans, &memories, &adrs);
+    let prefix = prefix_text(
+        &project,
+        &project_body,
+        &plans,
+        &memories,
+        &adrs,
+        follow_ups,
+    );
     let mut used = prefix.len();
     let mut first_omitted = false;
     for c in &mut contexts {
@@ -201,6 +232,7 @@ fn build(root: &Path, project: NoteObject, budget: usize) -> Result<Brief> {
         adrs,
         contexts,
         next,
+        follow_ups,
         budget: Budget {
             limit: budget,
             used: human.len(),
@@ -210,7 +242,10 @@ fn build(root: &Path, project: NoteObject, budget: usize) -> Result<Brief> {
 }
 
 /// Read a spoke's title, fields and body below its heading.
-fn read_spoke(path: &Path, kind: Kind) -> (String, Option<Vec<crate::frontmatter::Field>>, String) {
+pub(crate) fn read_spoke(
+    path: &Path,
+    kind: Kind,
+) -> (String, Option<Vec<crate::frontmatter::Field>>, String) {
     let Ok(src) = std::fs::read_to_string(path) else {
         return (UNTITLED.to_owned(), None, String::new());
     };
@@ -259,6 +294,22 @@ fn count_steps(body: &str) -> Steps {
         }
     }
     steps
+}
+
+/// Count the follow-up items of the closed plans, and the plans carrying them.
+fn count_follow_ups(spokes: &[Spoke]) -> FollowUps {
+    let mut counts = FollowUps::default();
+    for spoke in spokes {
+        if spoke.note.kind != Kind::Plan || status_of(spoke) != Some("done") {
+            continue;
+        }
+        let items = crate::followups::items(&spoke.body).len();
+        if items > 0 {
+            counts.items += items;
+            counts.plans += 1;
+        }
+    }
+    counts
 }
 
 /// A note's `status` scalar.
@@ -324,6 +375,7 @@ fn prefix_text(
     plans: &[Spoke],
     memories: &[Spoke],
     adrs: &[Spoke],
+    follow_ups: FollowUps,
 ) -> String {
     let path = project
         .fields
@@ -362,6 +414,17 @@ fn prefix_text(
             let _ = write!(line, " · {r}");
         }
         let _ = writeln!(out, "{line}");
+    }
+    // One fact, and no command: naming one here would invite a session to run
+    // it at start, which would inject the items after all.
+    if follow_ups.items > 0 {
+        let _ = writeln!(
+            out,
+            "Follow-ups: {} in {} closed {}.",
+            follow_ups.items,
+            follow_ups.plans,
+            crate::report::plural(follow_ups.plans, "plan")
+        );
     }
 
     out.push_str("\n## Memories\n");
@@ -426,7 +489,7 @@ fn refs_of(note: &NoteObject) -> Vec<&str> {
 
 /// The last-change date of every governed note: from one `git log` when the
 /// vault is a git repository, else file mtime.
-fn last_change_dates(root: &Path) -> Result<BTreeMap<PathBuf, String>> {
+pub(crate) fn last_change_dates(root: &Path) -> Result<BTreeMap<PathBuf, String>> {
     let git = if root.join(".git").exists() {
         git_dates(root)
     } else {
@@ -525,6 +588,7 @@ struct BriefJson<'a> {
     adrs: Vec<crate::report::NoteJson<'a>>,
     contexts: Vec<ContextJson<'a>>,
     next: Vec<String>,
+    follow_ups: FollowUps,
     budget: Budget,
     /// The human output of this same run, so a reader that injects the text
     /// and shows the lists needs one run, not two that can disagree.
@@ -560,6 +624,7 @@ pub fn json(brief: &Brief) -> String {
             })
             .collect(),
         next: brief.next.clone(),
+        follow_ups: brief.follow_ups,
         budget: brief.budget,
         text: &brief.human,
     })

@@ -66,6 +66,7 @@ mnemex list [--kind <k>] [--project <id>] [--tag <t>]... [--json]
 mnemex project --for <dir> [--json]
 mnemex show <id> [--json]
 mnemex brief --for <dir> [--budget <bytes>] [--json]
+mnemex follow-ups [--for <dir> | --project <id>] [--json]
 ```
 
 Every verb that takes a note takes its full id: the twelve-digit stamp, a
@@ -135,6 +136,11 @@ block telling the session which plan to read first and which done plans to
 close. Context bodies are cut to an output budget (default 16384 bytes).
 `--json` carries the same printed text in `text`, beside the lists it was
 rendered from.
+
+A plan closes once its goal is met, so its follow-ups are work beyond the goal
+that survives the plan. The brief counts them in one line, `Follow-ups: <n> in
+<m> closed plans.`, and names neither the plans nor their text; `mnemex
+follow-ups` lists them in full, on demand.
 
 ## Using with Pi
 

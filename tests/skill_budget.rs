@@ -100,6 +100,7 @@ fn the_skill_routes_to_the_tool_for_everything_the_tool_answers() {
         "mnemex resolve",
         "mnemex project",
         "mnemex brief",
+        "mnemex follow-ups",
     ] {
         assert!(text.contains(verb), "the skill does not route to `{verb}`");
     }
